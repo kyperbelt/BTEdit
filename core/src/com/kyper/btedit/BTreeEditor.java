@@ -92,6 +92,8 @@ public class BTreeEditor extends ApplicationAdapter {
 	public VisSelectBox<String> node_sel;
 	public VisTextButton select;
 
+	public VisTextButton insert;
+
 	public VisWindow save_window;
 	public VisTextButton save_project, close_project;
 
@@ -133,6 +135,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		if (!prefs.contains("last_save_path")) {
 			prefs.putString("last_save_path", "");
 		}
+
 		last_save_path = prefs.getString("last_save_path");
 		VisUI.load(SkinScale.X1);
 		stage = new Stage(new ScreenViewport());
@@ -234,7 +237,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		node_chooser = new VisWindow("Node Select");
 		//node_chooser.setMovable(false);
 		node_chooser.setModal(true);
-		node_chooser.setSize(500, 100);
+		node_chooser.setSize(500, 130);
 		node_chooser.addCloseButton();
 		nodetype_sel = new VisSelectBox<String>();
 		nodetype_sel.setItems("Composite", "Supplement", "Leaf");
@@ -244,14 +247,19 @@ public class BTreeEditor extends ApplicationAdapter {
 				setCorrectNodes();
 			}
 		});
+
 		node_sel = new VisSelectBox<String>();
-		select = new VisTextButton("Select");
+		select = new VisTextButton("Add Below");
+		insert = new VisTextButton("Add Above");
 
 		node_chooser.add(new VisLabel("Type:")).align(Align.left);
 		node_chooser.add(nodetype_sel).padRight(5).growX();
 		node_chooser.add(new VisLabel("Node:")).align(Align.left);
 		node_chooser.add(node_sel).growX().row();
+
+		node_chooser.add(insert).colspan(4).expandX().align(Align.right).padTop(5).row();
 		node_chooser.add(select).colspan(4).expandX().align(Align.right).padTop(5);
+
 		node_chooser.getTitleTable().getCells().get(1).getActor().addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -374,6 +382,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		busy = true;
 		centerActor(node_chooser);
 		select.clearListeners();
+		insert.clearListeners();
 		select.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -386,6 +395,20 @@ public class BTreeEditor extends ApplicationAdapter {
 				busy = false;
 			}
 		});
+
+		insert.addListener(new ClickListener() {
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				String nodetype = nodetype_sel.getSelected();
+				String name = node_sel.getSelected();
+				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+				createNewProject(DEFAULT_NAME, node);
+				node.updateArrows();
+				node_chooser.fadeOut();
+				busy = false;
+			}
+		});
+
 		stage.addActor(node_chooser);
 	}
 
@@ -393,6 +416,8 @@ public class BTreeEditor extends ApplicationAdapter {
 		busy = true;
 		centerActor(node_chooser);
 		select.clearListeners();
+		insert.clearListeners();
+
 		select.addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -406,6 +431,58 @@ public class BTreeEditor extends ApplicationAdapter {
 				busy = false;
 			}
 		});
+
+		insert.addListener(new ClickListener() {
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				String nodetype = nodetype_sel.getSelected();
+
+				String name = node_sel.getSelected();
+				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+
+				if (nodetype.equals("Leaf"))
+				{
+					//can't actually add above, so adds below.
+					if (parent != null) {
+					parent.addNode(node);
+				}
+					node_chooser.fadeOut();
+					busy = false;
+					return;
+				}
+				
+				if (parent != null) {
+					BehaviorNode parentParent = parent.parent;
+
+
+
+					if (parentParent != null)
+						parentParent.removeNode(parent);
+
+					node.addNode(parent);
+
+					if (parentParent != null) 
+						parentParent.addNode(node);
+					else
+					{
+						//we've replaced root node!
+						resetTreeView();
+						node.setPosition(tree_view.getWidth() * .45f, tree_view.getHeight() * .8f);
+						project_name = name;
+						Gdx.graphics.setTitle(TITLE + " - " + project_name);
+						tree_view.removeActor(current);
+						current = node;
+						tree_view.addActor(node);
+						setDirty();
+					}
+
+				}
+
+				node_chooser.fadeOut();
+				busy = false;
+			}
+		});
+
 		stage.addActor(node_chooser);
 	}
 
