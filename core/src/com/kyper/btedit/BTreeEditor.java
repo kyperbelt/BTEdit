@@ -156,6 +156,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				busy = false;
 			}
 		});
+
 		chooser.setSelectionMode(SelectionMode.FILES);
 		chooser.setFileFilter(new FileFilter() {
 			@Override
@@ -380,6 +381,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				String name = node_sel.getSelected();
 				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
 				createNewProject(DEFAULT_NAME, node);
+				node.updateArrows();
 				node_chooser.fadeOut();
 				busy = false;
 			}

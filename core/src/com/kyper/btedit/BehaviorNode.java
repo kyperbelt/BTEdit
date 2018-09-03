@@ -68,11 +68,11 @@ public class BehaviorNode extends VisWindow {
 				}
 
 				if (a == left) {
-
+					parent.moveLeft(BehaviorNode.this);
 				}
 
 				if (a == right) {
-
+					parent.moveRight(BehaviorNode.this);
 				}
 
 			}
@@ -130,7 +130,56 @@ public class BehaviorNode extends VisWindow {
 		reLayout();
 		if (type == NodeType.SUPPLEMENT)
 			add.setVisible(false);
+
+		//As a node was added to this parent, update all children's arrows
+		//to reflect new possible moves.
+		updateArrows();
+		updateArrowsOnChildren();
+
 		editor.setDirty();
+	}
+
+	public void rebuildChildTable()
+	{
+		child_table.reset();
+		
+		for (int i = 0; i < children.size; i++) {
+			BehaviorNode n = children.get(i);
+			child_table.add(n).pad(10).align(Align.top);
+		}
+
+		child_table.invalidate();
+		reLayout();
+
+	}
+
+	public void updateArrowsOnChildren()
+	{
+		for (int i = 0; i < children.size; i++) {
+			children.get(i).updateArrows();
+		}
+	}
+
+	public void updateArrows()
+	{
+		left.setVisible(false);
+		right.setVisible(false);
+
+		if (this.parent == null) return;
+		int cnt = this.parent.children.size;
+		if (cnt < 2) return;
+
+		left.setVisible(true);
+		right.setVisible(true);
+
+		if (this == this.parent.children.get(0))
+		{
+			left.setVisible(false);
+		} else if (this == this.parent.children.get(cnt-1))
+		{
+			right.setVisible(false);
+		}
+
 	}
 
 	public void removeNode(BehaviorNode node) {
@@ -143,6 +192,42 @@ public class BehaviorNode extends VisWindow {
 		if (type == NodeType.SUPPLEMENT)
 			add.setVisible(true);
 		editor.setDirty();
+
+		//As a node was removed from this parent, update all children's arrows
+		//to reflect new possible moves.
+		updateArrowsOnChildren();
+
+	}
+
+	private int arrayNumber(BehaviorNode node)
+	{
+		for (int i = 0; i < children.size; i++) {
+			if (node == children.get(i)) return i;
+		}
+
+		return -1;
+	}
+
+	public void moveLeft(BehaviorNode node) {
+		int pos = arrayNumber(node);
+		if (pos < 0) return;
+
+		int newPos = pos - 1;
+		children.swap(newPos, pos);
+		rebuildChildTable();
+		editor.setDirty();
+		updateArrowsOnChildren();
+	}
+
+	public void moveRight(BehaviorNode node) {
+		int pos = arrayNumber(node);
+		if (pos < 0) return;
+
+		int newPos = pos + 1;
+		children.swap(newPos, pos);
+		rebuildChildTable();
+		editor.setDirty();
+		updateArrowsOnChildren();
 	}
 
 	protected void reLayout() {

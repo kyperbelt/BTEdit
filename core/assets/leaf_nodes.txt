@@ -1,1 +1,4 @@
 TestBehaviour
+Wait
+SetDirection
+ReverseDirection
