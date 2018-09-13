@@ -9,9 +9,10 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
-import com.badlogic.gdx.utils.ObjectMap;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisWindow;
+import com.kyper.btedit.command.MoveNodeCommand;
+import com.kyper.btedit.command.RemoveNodeCommand;
 
 public class BehaviorNode extends VisWindow {
 
@@ -23,12 +24,13 @@ public class BehaviorNode extends VisWindow {
 	}
 
 	String nodename;
-	NodeType type;
+	public NodeType type;
 
 	Table button_table;
+	Table property_table;
 	Table child_table;
-	
-	NodeProperties properties;
+
+	public NodeProperties properties;
 
 	BTreeEditor editor;
 
@@ -49,7 +51,7 @@ public class BehaviorNode extends VisWindow {
 		setResizable(false);
 		setKeepWithinParent(false);
 		setKeepWithinStage(false);
-		//setMovable(false);
+		// setMovable(false);
 		children = new Array<BehaviorNode>();
 
 		ClickListener listener = new ClickListener() {
@@ -63,16 +65,17 @@ public class BehaviorNode extends VisWindow {
 
 				if (a == del) {
 					if (parent != null) {
-						parent.removeNode(BehaviorNode.this);
+						editor.addAndExecuteCommand(new RemoveNodeCommand(editor, BehaviorNode.this, parent));
+					
 					}
 				}
 
 				if (a == left) {
-					parent.moveLeft(BehaviorNode.this);
+					editor.addAndExecuteCommand(new MoveNodeCommand(editor, BehaviorNode.this, parent, true));
 				}
 
 				if (a == right) {
-					parent.moveRight(BehaviorNode.this);
+					editor.addAndExecuteCommand(new MoveNodeCommand(editor, BehaviorNode.this, parent, false));
 				}
 
 			}
@@ -131,18 +134,40 @@ public class BehaviorNode extends VisWindow {
 		if (type == NodeType.SUPPLEMENT)
 			add.setVisible(false);
 
-		//As a node was added to this parent, update all children's arrows
-		//to reflect new possible moves.
+		// As a node was added to this parent, update all children's arrows
+		// to reflect new possible moves.
 		updateArrows();
 		updateArrowsOnChildren();
 
 		editor.setDirty();
 	}
 
-	public void rebuildChildTable()
-	{
+	public void addNode(BehaviorNode node, int index) {
+		if (index != -1) {
+			node.parent = this;
+			children.insert(index, node);
+			node.setMovable(false);
+			child_table.add(node).pad(10).align(Align.top);
+			child_table.getCells().swap(index, child_table.getCells().size - 1);
+			child_table.invalidate();
+			reLayout();
+			if (type == NodeType.SUPPLEMENT)
+				add.setVisible(false);
+
+			// As a node was added to this parent, update all children's arrows
+			// to reflect new possible moves.
+			updateArrows();
+			updateArrowsOnChildren();
+
+			editor.setDirty();
+		}else {
+			addNode(node);
+		}
+	}
+
+	public void rebuildChildTable() {
 		child_table.reset();
-		
+
 		for (int i = 0; i < children.size; i++) {
 			BehaviorNode n = children.get(i);
 			child_table.add(n).pad(10).align(Align.top);
@@ -153,30 +178,29 @@ public class BehaviorNode extends VisWindow {
 
 	}
 
-	public void updateArrowsOnChildren()
-	{
+	public void updateArrowsOnChildren() {
 		for (int i = 0; i < children.size; i++) {
-			children.get(i).updateArrows();
+			if (children.get(i) instanceof BehaviorNode)
+				children.get(i).updateArrows();
 		}
 	}
 
-	public void updateArrows()
-	{
+	public void updateArrows() {
 		left.setVisible(false);
 		right.setVisible(false);
 
-		if (this.parent == null) return;
+		if (this.parent == null)
+			return;
 		int cnt = this.parent.children.size;
-		if (cnt < 2) return;
+		if (cnt < 2)
+			return;
 
 		left.setVisible(true);
 		right.setVisible(true);
 
-		if (this == this.parent.children.get(0))
-		{
+		if (this == this.parent.children.get(0)) {
 			left.setVisible(false);
-		} else if (this == this.parent.children.get(cnt-1))
-		{
+		} else if (this == this.parent.children.get(cnt - 1)) {
 			right.setVisible(false);
 		}
 
@@ -193,16 +217,20 @@ public class BehaviorNode extends VisWindow {
 			add.setVisible(true);
 		editor.setDirty();
 
-		//As a node was removed from this parent, update all children's arrows
-		//to reflect new possible moves.
+		// As a node was removed from this parent, update all children's arrows
+		// to reflect new possible moves.
 		updateArrowsOnChildren();
 
 	}
+	
+	public int getIndex() {
+		return parent!=null ? parent.children.indexOf(this, true):-1;
+	}
 
-	private int arrayNumber(BehaviorNode node)
-	{
+	private int arrayNumber(BehaviorNode node) {
 		for (int i = 0; i < children.size; i++) {
-			if (node == children.get(i)) return i;
+			if (node == children.get(i))
+				return i;
 		}
 
 		return -1;
@@ -210,7 +238,8 @@ public class BehaviorNode extends VisWindow {
 
 	public void moveLeft(BehaviorNode node) {
 		int pos = arrayNumber(node);
-		if (pos < 0) return;
+		if (pos < 0)
+			return;
 
 		int newPos = pos - 1;
 		children.swap(newPos, pos);
@@ -221,7 +250,8 @@ public class BehaviorNode extends VisWindow {
 
 	public void moveRight(BehaviorNode node) {
 		int pos = arrayNumber(node);
-		if (pos < 0) return;
+		if (pos < 0)
+			return;
 
 		int newPos = pos + 1;
 		children.swap(newPos, pos);
@@ -249,16 +279,16 @@ public class BehaviorNode extends VisWindow {
 
 	public String getJson(int indent) {
 		String json = Utils.tab(indent) + "\"" + nodename + "\" :" + "{\n";
-		json+=Utils.tab(indent+1)+"\"children\" : {";
+		json += Utils.tab(indent + 1) + "\"children\" : {";
 		for (int i = 0; i < children.size; i++) {
-			
+
 			json += "\n" + children.get(i).getJson(indent + 2);
 			if (i + 1 < children.size)
 				json += ",\n";
-			else 
-				json+="\n";
+			else
+				json += "\n";
 		}
-		json+=children.size == 0 ? "}\n":Utils.tab(indent+1)+"}\n";
+		json += children.size == 0 ? "}\n" : Utils.tab(indent + 1) + "}\n";
 		json += Utils.tab(indent) + "}";
 		return json;
 	}
@@ -270,11 +300,11 @@ public class BehaviorNode extends VisWindow {
 			json = json.get(0);
 		name = json.name();
 		NodeType type = null;
-		if (editor.Composites.contains(name, false))
+		if (NodeTemplate.templatesContainNodeName(editor.composite_nodes,name))
 			type = NodeType.COMPOSITE;
-		else if (editor.Supplements.contains(name, false))
+		else if (NodeTemplate.templatesContainNodeName(editor.supplement_nodes,name))
 			type = NodeType.SUPPLEMENT;
-		else if (editor.Leafs.contains(name, false)) {
+		else if (NodeTemplate.templatesContainNodeName(editor.leaf_nodes,name)) {
 			type = NodeType.LEAF;
 		} else {
 			throw new IllegalArgumentException("Unable to create Node:[" + name + "] ");
@@ -282,7 +312,7 @@ public class BehaviorNode extends VisWindow {
 
 		n = new BehaviorNode(editor, type, name);
 		JsonValue children = json.get("children");
-		
+
 		for (int i = 0; i < children.size; i++) {
 			JsonValue v = children.get(i);
 			BehaviorNode child = BehaviorNode.fromJson(editor, v);
