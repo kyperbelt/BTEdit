@@ -23,7 +23,7 @@
 		},
 		"Repeat": {
 			"properties": {
-				"count":{
+				"count": {
 					"type": "int",
 					"value": "-1"
 				}

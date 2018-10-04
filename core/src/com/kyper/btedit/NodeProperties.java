@@ -1,9 +1,18 @@
 package com.kyper.btedit;
 
+import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
+import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
+import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
-import com.kyper.btedit.NodeProperties.NodeProperty;
-import com.kyper.btedit.NodeProperties.PropertyType;
+import com.kotcrab.vis.ui.util.FloatDigitsOnlyFilter;
+import com.kotcrab.vis.ui.util.IntDigitsOnlyFilter;
+import com.kotcrab.vis.ui.widget.VisCheckBox;
+import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kotcrab.vis.ui.widget.VisTextField;
+import com.kyper.btedit.command.ChangePropertyCommand;
 
 public class NodeProperties {
 
@@ -69,7 +78,7 @@ public class NodeProperties {
 			json += p.getJson(indent + 1) + (i == properties.size - 1 ? "" : ",") + "\n";
 		}
 
-		json += Utils.tab(indent) + "}";
+		json += (properties.size == 0 ? "" : Utils.tab(indent)) + "}";
 
 		return json;
 	}
@@ -120,6 +129,8 @@ public class NodeProperties {
 		public String name;
 		public PropertyType type;
 		public String value;
+		
+		private Table property_table;
 
 		public NodeProperty(String name, PropertyType type) {
 			this(name, type, type.getPropertyValue());
@@ -143,6 +154,75 @@ public class NodeProperties {
 			return Utils.tab(indent) + "\"" + name + "\":{\n" + Utils.tab(indent + 1) + "\"value\":\"" + value + "\",\n"
 					+ Utils.tab(indent + 1) + "\"type\":\"" + type.name().toLowerCase() + "\"\n" + Utils.tab(indent)
 					+ "}";
+		}
+		
+		public Table getPropertyTable(final BTreeEditor editor) {
+			if (property_table!=null)
+				return property_table;
+			
+			property_table = new Table();
+			property_table.align(Align.topLeft);
+			
+			boolean is_boolean = false;
+			
+			VisLabel namelabel = new VisLabel(name+" : ");
+			
+			final VisTextField value_field = getValueField();
+			
+			final VisCheckBox checkbox = new VisCheckBox("");
+			if(value_field == null) {
+				checkbox.setChecked(Boolean.parseBoolean(value));
+				
+				checkbox.addListener(new ChangeListener() {
+					@Override
+					public void changed(ChangeEvent event, Actor actor) {
+						String new_value = Boolean.toString(checkbox.isChecked());
+						editor.addAndExecuteCommand(new ChangePropertyCommand(editor, NodeProperty.this, value, new_value,checkbox));
+					}
+				});
+				is_boolean = true;
+			}else {
+				
+				value_field.addListener(new ChangeListener() {
+					@Override
+					public void changed(ChangeEvent event, Actor actor) {
+						String new_value = value_field.getText();
+						editor.addAndExecuteCommand(new ChangePropertyCommand(editor, NodeProperty.this, value, new_value,value_field));
+					}
+				});
+			}
+			
+			property_table.add(namelabel);
+
+			if(!is_boolean) {
+				property_table.add(value_field);
+			}else {
+				property_table.add(checkbox);
+			}
+			
+			return property_table;
+		}
+		
+		private VisTextField getValueField() {
+			
+			VisTextField text_field = new VisTextField();
+			text_field.setWidth(280);
+			
+			switch(type) {
+			case Int:
+				text_field.setTextFieldFilter(new IntDigitsOnlyFilter(true));
+				
+				break;
+			case Float:
+				text_field.setTextFieldFilter(new FloatDigitsOnlyFilter(true));
+				break;
+			case Bool:
+				return null;
+			case String:
+				break;
+			}
+			text_field.setText(value);
+			return text_field;
 		}
 	}
 

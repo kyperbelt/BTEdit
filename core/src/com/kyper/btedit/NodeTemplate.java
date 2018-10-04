@@ -2,6 +2,7 @@ package com.kyper.btedit;
 
 import com.badlogic.gdx.utils.Array;
 import com.kyper.btedit.BehaviorNode.NodeType;
+import com.kyper.btedit.NodeProperties.NodeProperty;
 
 public class NodeTemplate {
 	
@@ -27,11 +28,30 @@ public class NodeTemplate {
 		return name;
 	}
 	
+	public void properitize(BehaviorNode node) {
+		Array<NodeProperty> ps = this.properties.getProperties();
+		for (int i = 0; i < ps.size; i++) {
+			NodeProperty p = ps.get(i);
+			NodeProperty np = new NodeProperty(p.name, p.type,p.value);
+			node.properties.addPropety(np);
+			System.out.println("added property:"+np.name);
+		}
+	}
+	
 	public String getJson(int indent) {
 		String json = String.format(Utils.tab(indent)+"\"%s\":{\n",name);
 		json+=properties.toJson(indent+1);
 		json+=Utils.tab(indent)+"}\n";
 		return json;
+	}
+	
+	public static NodeTemplate getTemplateByName(Array<NodeTemplate> templates,String name) {
+		for (int i = 0; i < templates.size; i++) {
+			NodeTemplate template = templates.get(i);
+			if(template.name.equals(name))
+				return template;
+		}
+		return null;
 	}
 	
 	public static void templatesToStringArray(Array<NodeTemplate> templates,Array<String> out){

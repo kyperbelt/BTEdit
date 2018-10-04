@@ -35,6 +35,7 @@ import com.kotcrab.vis.ui.VisUI.SkinScale;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisSelectBox;
 import com.kotcrab.vis.ui.widget.VisTextButton;
+import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.kotcrab.vis.ui.widget.file.FileChooser.Mode;
@@ -81,7 +82,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public Table button_window;
 
-	VisTextButton create, open, save, saveas;
+	VisTextButton create, open, save, saveas,config;
 	
 	public Array<String> items = new Array<String>();
 
@@ -115,7 +116,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			"		\"Repeat\": {\r\n" + //
 			"			\"properties\": {\r\n" + //
 			"				\"count\": {\r\n" + //
-			"					\"type\": \"int\","+ //
+			"					\"type\": \"int\",\r\n"+ //
 			"					\"value\": \"-1\"\r\n"+ //
 			"				}\r\n" + //
 			"			}\r\n" + //
@@ -158,6 +159,8 @@ public class BTreeEditor extends ApplicationAdapter {
 	public VisSelectBox<String> nodetype_sel;
 	public VisSelectBox<String> node_sel;
 	public VisTextButton select;
+			
+
 
 	public VisTextButton insert;
 
@@ -180,6 +183,13 @@ public class BTreeEditor extends ApplicationAdapter {
 	Table tt;
 
 	public BehaviorNode last_chosen_node;
+	
+	//config stuff
+	public VisWindow config_window;
+	public VisLabel node_file_label;
+	public VisTextField node_file_textfield;
+	public FileChooser nodefile_chooser;
+	public VisTextButton accept_config;
 
 	@Override
 	public void create() {
@@ -237,11 +247,12 @@ public class BTreeEditor extends ApplicationAdapter {
 
 			@Override
 			public boolean keyUp(int keycode) {
-				// TODO Auto-generated method stub
 
-				// TODO Auto-generated method stub
+				if(busy)
+					return false;
 
 				if (keycode == UNDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					stage.unfocusAll();
 					undo();
 					System.out.println(String.format("UNDO: current index = %s | command size = %s", command_index,
 							commands.size));
@@ -249,6 +260,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				} else
 
 				if (keycode == REDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					stage.unfocusAll();
 					redo();
 					System.out.println(String.format("REDO : current index = %s | command size = %s", command_index,
 							commands.size));
@@ -257,9 +269,27 @@ public class BTreeEditor extends ApplicationAdapter {
 
 				return super.keyUp(keycode);
 			}
+			
+			@Override
+			public boolean keyDown(int keycode) {
+				if(busy)
+					return false;
+				
+				if (keycode == UNDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					stage.unfocusAll();
+					return true;
+				} else
+
+				if (keycode == REDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					stage.unfocusAll();
+					return true;
+				}
+				
+				return super.keyDown(keycode);
+			}
 		};
 
-		chooser = new FileChooser(Gdx.files.absolute(last_save_path), Mode.OPEN);
+		chooser = new FileChooser(Gdx.files.external(last_save_path), Mode.OPEN);
 		chooser.getTitleTable().getCells().get(1).getActor().addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -277,7 +307,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			}
 		});
 
-		saver = new FileChooser(Gdx.files.absolute(last_save_path), Mode.SAVE);
+		saver = new FileChooser(Gdx.files.external(last_save_path), Mode.SAVE);
 		saver.getTitleTable().getCells().get(1).getActor().addListener(new ClickListener() {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
@@ -326,6 +356,10 @@ public class BTreeEditor extends ApplicationAdapter {
 
 				if (a == saveas && current != null) {
 					saveProjectAs(CLOSE);
+				}
+				
+				if(a == config) {
+					openConfig();
 				}
 			}
 		};
@@ -382,12 +416,15 @@ public class BTreeEditor extends ApplicationAdapter {
 		save.addListener(listener);
 		saveas = new VisTextButton("Save As");
 		saveas.addListener(listener);
+		config = new VisTextButton("Config");
+		config.addListener(listener);
 
 		button_window.add(create).pad(5);
 		button_window.add(open).pad(5);
 		button_window.add().pad(5);
 		button_window.add(save).pad(5);
 		button_window.add(saveas).pad(5);
+		button_window.add(config).pad(5);
 		button_window.pack();
 
 		tt = new Table();
@@ -455,6 +492,40 @@ public class BTreeEditor extends ApplicationAdapter {
 		
 		JsonValue leaf = root.get("leaf");
 		templateFromJson(leaf_nodes, leaf, NodeType.LEAF);
+	}
+	
+	public void openConfig() {
+		if(config_window == null) {
+			config_window = new VisWindow("Configuration");
+			node_file_label = new VisLabel("Node File:");
+			node_file_textfield = new VisTextField();
+			accept_config = new VisTextButton("Accept");
+			accept_config.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					String filepath = node_file_textfield.getText();
+					if(Gdx.files.external(filepath).exists()) {
+						prefs.putString(NODES_FILE, node_file_textfield.getText());
+					}
+					config_window.remove();
+				}
+			});
+			
+			config_window.setSize(400, 200);
+			config_window.add(node_file_label).pad(5);
+			config_window.add(node_file_textfield).growX().row();
+			config_window.add().growX();
+			config_window.add(accept_config).align(Align.right);
+		}
+		
+		config_window.setModal(true);
+		config_window.addCloseButton();
+		node_file_textfield.setText(prefs.getString(NODES_FILE));
+		
+		centerActor(config_window);
+		stage.addActor(config_window);
+		
+		
 	}
 	
 	/**
@@ -581,6 +652,18 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		stage.addActor(node_chooser);
 	}
+	
+	private NodeTemplate getTemplate(String name,NodeType type) {
+		switch(type) {
+		case COMPOSITE:
+			return NodeTemplate.getTemplateByName(composite_nodes, name);
+		case SUPPLEMENT:
+			return NodeTemplate.getTemplateByName(supplement_nodes, name);
+		case LEAF:
+			return NodeTemplate.getTemplateByName(leaf_nodes, name);
+		}
+		return null;
+	}
 
 	public void createNewNode(final BehaviorNode parent) {
 		busy = true;
@@ -594,6 +677,12 @@ public class BTreeEditor extends ApplicationAdapter {
 				String nodetype = nodetype_sel.getSelected();
 				String name = node_sel.getSelected();
 				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+				NodeTemplate template = getTemplate(name, NodeType.valueOf(nodetype.toUpperCase()));
+				if(template!=null) {
+					template.properitize(node);
+					node.createProperties();
+					node.showProperties();
+				}
 				if (parent != null) {
 					CreateNodeCommand c = new CreateNodeCommand(BTreeEditor.this, node, parent, -1);
 					addAndExecuteCommand(c);

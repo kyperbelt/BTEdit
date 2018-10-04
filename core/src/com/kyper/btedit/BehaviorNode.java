@@ -11,6 +11,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisWindow;
+import com.kyper.btedit.NodeProperties.NodeProperty;
 import com.kyper.btedit.command.MoveNodeCommand;
 import com.kyper.btedit.command.RemoveNodeCommand;
 
@@ -27,7 +28,7 @@ public class BehaviorNode extends VisWindow {
 	public NodeType type;
 
 	Table button_table;
-	Table property_table;
+	Table property_table,property_container;
 	Table child_table;
 
 	public NodeProperties properties;
@@ -66,7 +67,7 @@ public class BehaviorNode extends VisWindow {
 				if (a == del) {
 					if (parent != null) {
 						editor.addAndExecuteCommand(new RemoveNodeCommand(editor, BehaviorNode.this, parent));
-					
+
 					}
 				}
 
@@ -96,11 +97,19 @@ public class BehaviorNode extends VisWindow {
 		button_table.add(add).padLeft(5).padRight(5);
 		button_table.add(del);
 		button_table.add().growX();
+		
+		property_container = new Table();
+		property_container.align(Align.topLeft);
+		
+		property_table = new Table();
+		property_table.align(Align.topLeft);
+		
 
 		child_table = new Table();
 		child_table.align(Align.top);
 
 		add(button_table).growX().row();
+		add(property_container).grow().row();
 		add(child_table).grow();
 
 		switch (type) {
@@ -118,6 +127,25 @@ public class BehaviorNode extends VisWindow {
 			break;
 		}
 
+	}
+	
+	public void createProperties() {
+		Array<NodeProperty> nps = properties.getProperties();
+		for (int i = 0; i < nps.size; i++) {
+			Table p = nps.get(i).getPropertyTable(editor);
+			property_table.add(p).growX().align(Align.left).padTop(5).row();
+		}
+	}
+	
+	public void showProperties() {
+		property_container.add(property_table).align(Align.topLeft).grow();
+	}
+	
+	public void hideProperties() {
+		Cell<Table> cell = property_container.getCell(property_table);
+		cell.pad(0);
+		property_table.remove();
+		property_container.layout();
 	}
 
 	public String getNodeName() {
@@ -160,7 +188,7 @@ public class BehaviorNode extends VisWindow {
 			updateArrowsOnChildren();
 
 			editor.setDirty();
-		}else {
+		} else {
 			addNode(node);
 		}
 	}
@@ -222,9 +250,9 @@ public class BehaviorNode extends VisWindow {
 		updateArrowsOnChildren();
 
 	}
-	
+
 	public int getIndex() {
-		return parent!=null ? parent.children.indexOf(this, true):-1;
+		return parent != null ? parent.children.indexOf(this, true) : -1;
 	}
 
 	private int arrayNumber(BehaviorNode node) {
@@ -273,12 +301,12 @@ public class BehaviorNode extends VisWindow {
 				del.setVisible(false);
 			}
 		}
-
 		super.act(delta);
 	}
 
 	public String getJson(int indent) {
 		String json = Utils.tab(indent) + "\"" + nodename + "\" :" + "{\n";
+		json += properties.toJson(indent + 1) + ",\n";
 		json += Utils.tab(indent + 1) + "\"children\" : {";
 		for (int i = 0; i < children.size; i++) {
 
@@ -300,17 +328,22 @@ public class BehaviorNode extends VisWindow {
 			json = json.get(0);
 		name = json.name();
 		NodeType type = null;
-		if (NodeTemplate.templatesContainNodeName(editor.composite_nodes,name))
+		if (NodeTemplate.templatesContainNodeName(editor.composite_nodes, name))
 			type = NodeType.COMPOSITE;
-		else if (NodeTemplate.templatesContainNodeName(editor.supplement_nodes,name))
+		else if (NodeTemplate.templatesContainNodeName(editor.supplement_nodes, name))
 			type = NodeType.SUPPLEMENT;
-		else if (NodeTemplate.templatesContainNodeName(editor.leaf_nodes,name)) {
+		else if (NodeTemplate.templatesContainNodeName(editor.leaf_nodes, name)) {
 			type = NodeType.LEAF;
 		} else {
 			throw new IllegalArgumentException("Unable to create Node:[" + name + "] ");
 		}
 
 		n = new BehaviorNode(editor, type, name);
+		JsonValue node_properties = json.get("properties");
+		if (node_properties != null)
+			n.properties.fromJson(node_properties);
+		n.createProperties();
+		n.showProperties();
 		JsonValue children = json.get("children");
 
 		for (int i = 0; i < children.size; i++) {
