@@ -6,6 +6,9 @@
 		"Selector": {
 			"properties": {}
 		},
+		"Parallel": {
+			"properties": {}
+		},
 		"RandomSequence": {
 			"properties": {}
 		},
@@ -21,6 +24,9 @@
 		"Success": {
 			"properties": {}
 		},
+		"Failure": {
+			"properties": {}
+		},
 		"Repeat": {
 			"properties": {
 				"count": {
@@ -31,6 +37,14 @@
 		},
 		"RepeatUntilFail": {
 			"properties": {}
+		},
+		"IsContextValueSet": {
+			"properties": {
+				"Field" : {
+					"type": "string",
+					"value": ""
+				}
+			}
 		}
 	},
 	"leaf": {
@@ -47,12 +61,65 @@
 		},
 		"Wait": {
 			"properties": {
-				"time": {
-					"type": "int",
+				"Time": {
+					"type": "string",
 					"value": "1"
 				}
 			}
-		}
-
+		},
+		"WaitRandom": {
+			"properties": {
+				"TimeMin": {
+					"type": "string",
+					"value": "1"
+				},
+				"TimeMax": {
+					"type": "string",
+					"value": "3"
+				}
+			}
+		},
+		"RunAction": {
+			"properties": {
+				"ActionName": {
+					"type": "string",
+					"value": ""
+				}
+			}
+		},
+		"StopAction": {
+			"properties": {
+				"ActionName": {
+					"type": "string",
+					"value": ""
+				}
+			}
+		},
+		"SpawnEntity": {
+			"properties": {
+				"EntityName": {
+					"type": "string",
+					"value": ""
+				},
+				"SpawnRange": {
+					"type": "string",
+					"value": ""
+				}
+			}
+		},
+		"SetDirection": {
+			"properties": {
+				"Direction": {
+					"type": "string",
+					"value": "1"
+				}
+			}
+		},
+		"Reverse": {
+			"properties": {}
+		},
+		"TurnAround": {
+			"properties": {}
+		},
 	}
 }

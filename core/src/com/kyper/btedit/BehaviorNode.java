@@ -67,7 +67,6 @@ public class BehaviorNode extends VisWindow {
 				if (a == del) {
 					if (parent != null) {
 						editor.addAndExecuteCommand(new RemoveNodeCommand(editor, BehaviorNode.this, parent));
-
 					}
 				}
 
@@ -150,6 +149,16 @@ public class BehaviorNode extends VisWindow {
 
 	public String getNodeName() {
 		return nodename;
+	}
+
+	public int getChildrenCount()
+	{
+		return children.size;
+	}
+
+	public BehaviorNode getFirstChild()
+	{
+		return children.get(0);
 	}
 
 	public void addNode(BehaviorNode node) {
@@ -249,6 +258,11 @@ public class BehaviorNode extends VisWindow {
 		// to reflect new possible moves.
 		updateArrowsOnChildren();
 
+	}
+
+	public void removeNodeLeaveChild(BehaviorNode node)
+	{
+		//children.
 	}
 
 	public int getIndex() {

@@ -9,6 +9,12 @@ public class NodeTemplate {
 	private String name;
 	private NodeType type;
 	private NodeProperties properties;
+	private boolean isDefault = false;
+
+	public NodeTemplate(String name,NodeType type, boolean isDefault) {
+		this(name, type);
+		this.isDefault= isDefault;
+	}
 	
 	public NodeTemplate(String name,NodeType type) {
 		this.name = name;
@@ -26,6 +32,16 @@ public class NodeTemplate {
 	
 	public String getNodeName() {
 		return name;
+	}
+
+	public void setAsRoot()
+	{
+		isDefault = true;
+	}
+
+	public boolean isRoot()
+	{
+		return isDefault;
 	}
 	
 	public void properitize(BehaviorNode node) {
@@ -58,7 +74,8 @@ public class NodeTemplate {
 		out.clear();
 		for (int i = 0; i < templates.size; i++) {
 			NodeTemplate template = templates.get(i);
-			out.add(template.name);
+			if (template.isRoot() == false)
+				out.add(template.name);
 		}
 	}
 	
