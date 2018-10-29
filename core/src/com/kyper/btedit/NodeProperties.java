@@ -1,18 +1,14 @@
 package com.kyper.btedit;
 
-import com.badlogic.gdx.scenes.scene2d.Actor;
+import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
-import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener.ChangeEvent;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
 import com.kotcrab.vis.ui.util.FloatDigitsOnlyFilter;
 import com.kotcrab.vis.ui.util.IntDigitsOnlyFilter;
-import com.kotcrab.vis.ui.widget.VisCheckBox;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextField;
-import com.kyper.btedit.command.ChangePropertyCommand;
 
 public class NodeProperties {
 
@@ -157,50 +153,75 @@ public class NodeProperties {
 		}
 		
 		public Table getPropertyTable(final BTreeEditor editor) {
-			if (property_table!=null)
-				return property_table;
 			
-			property_table = new Table();
-			property_table.align(Align.topLeft);
-			
-			boolean is_boolean = false;
-			
-			VisLabel namelabel = new VisLabel(name+" : ");
-			
-			final VisTextField value_field = getValueField();
-			
-			final VisCheckBox checkbox = new VisCheckBox("");
-			if(value_field == null) {
-				checkbox.setChecked(Boolean.parseBoolean(value));
-				
-				checkbox.addListener(new ChangeListener() {
-					@Override
-					public void changed(ChangeEvent event, Actor actor) {
-						String new_value = Boolean.toString(checkbox.isChecked());
-						editor.addAndExecuteCommand(new ChangePropertyCommand(editor, NodeProperty.this, value, new_value,checkbox));
-					}
-				});
-				is_boolean = true;
-			}else {
-				
-				value_field.addListener(new ChangeListener() {
-					@Override
-					public void changed(ChangeEvent event, Actor actor) {
-						String new_value = value_field.getText();
-						editor.addAndExecuteCommand(new ChangePropertyCommand(editor, NodeProperty.this, value, new_value,value_field));
-					}
-				});
-			}
-			
-			property_table.add(namelabel);
 
-			if(!is_boolean) {
-				property_table.add(value_field);
-			}else {
-				property_table.add(checkbox);
+			Table pt = new Table();
+			pt.setHeight(24);
+
+			VisLabel namel = new VisLabel(name);
+			namel.setFontScale(.9f);
+			namel.setWidth(70);
+			namel.setAlignment(Align.left);
+			int char_lim = (int) (70 / namel.getStyle().font.getSpaceWidth());
+			System.out.println(char_lim);
+			if( char_lim*.8f < name.length()) {
+				namel.setText(name.substring(0, 8)+"...");
 			}
+			VisLabel valuel = new VisLabel(value);
+			valuel.setFontScale(.9f);
+			valuel.setAlignment(Align.right);
+
+			pt.add(namel).width(70).align(Align.left).padRight(3);
+			pt.add(valuel).growX().align(Align.bottomRight);
+			ImageButton gear = new ImageButton(Assets.Styles.editButton);
+			pt.add(gear).size(16);
+
+			return pt;
 			
-			return property_table;
+//			if (property_table!=null)
+//				return property_table;
+//			
+//			property_table = new Table();
+//			property_table.align(Align.topLeft);
+//			
+//			boolean is_boolean = false;
+//			
+//			VisLabel namelabel = new VisLabel(name+" : ");
+//			
+//			final VisTextField value_field = getValueField();
+//			
+//			final VisCheckBox checkbox = new VisCheckBox("");
+//			if(value_field == null) {
+//				checkbox.setChecked(Boolean.parseBoolean(value));
+//				
+//				checkbox.addListener(new ChangeListener() {
+//					@Override
+//					public void changed(ChangeEvent event, Actor actor) {
+//						String new_value = Boolean.toString(checkbox.isChecked());
+//						editor.addAndExecuteCommand(new ChangePropertyCommand(editor, NodeProperty.this, value, new_value,checkbox));
+//					}
+//				});
+//				is_boolean = true;
+//			}else {
+//				
+//				value_field.addListener(new ChangeListener() {
+//					@Override
+//					public void changed(ChangeEvent event, Actor actor) {
+//						String new_value = value_field.getText();
+//						editor.addAndExecuteCommand(new ChangePropertyCommand(editor, NodeProperty.this, value, new_value,value_field));
+//					}
+//				});
+//			}
+//			
+//			property_table.add(namelabel);
+//
+//			if(!is_boolean) {
+//				property_table.add(value_field);
+//			}else {
+//				property_table.add(checkbox);
+//			}
+//			
+//			return property_table;
 		}
 		
 		private VisTextField getValueField() {

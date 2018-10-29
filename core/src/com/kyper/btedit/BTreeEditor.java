@@ -32,6 +32,7 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
+import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
@@ -63,6 +64,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
+	public static final boolean DEBUG = true;
 
 	public static String VERSION = "0.1";
 	public static String TITLE = "BT Edit v" + VERSION;
@@ -222,7 +224,9 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	@Override
 	public void create() {
-
+		Assets.loadTextures();
+		Assets.createStyles();
+		
 		reader = new JsonReader();
 
 		commands = new Array<ICommand>();
@@ -276,8 +280,10 @@ public class BTreeEditor extends ApplicationAdapter {
 		project_path = prefs.getString(PROJECT_PATH);
 
 		VisUI.load(SkinScale.X1);
+
+		VisUI.getSkin().get("default",LabelStyle.class).fontColor = Color.DARK_GRAY;
 		stage = new Stage(new ScreenViewport());
-		// stage.setDebugAll(true);
+		stage.setDebugAll(DEBUG);
 
 		InputAdapter input = new InputAdapter() {
 			public boolean scrolled(int amount) {
@@ -902,14 +908,13 @@ public class BTreeEditor extends ApplicationAdapter {
 	public void createNewProject(String name, BehaviorNode root) {
 		Gdx.app.log("createNewProject", "start " + name);
 		resetTreeView();
-		root.setPosition(tree_view.getWidth() * .45f, tree_view.getHeight() * .6f);
+		centerNode(root);
 		NodeTemplate template = getTemplate(root.getNodeName(), root.type);
 		if(template!=null) {
 			Gdx.app.log("createNewProject", "template = " + template);
 			template.properitize(root);
 			root.createProperties();
-			root.showProperties();
-			root.reLayout();
+			root.layout();
 		}
 
 		project_name = name;
@@ -918,6 +923,21 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		Gdx.graphics.setTitle(TITLE + " - " + project_name);
 
+	}
+	
+	public void centerNode(BehaviorNode root) {
+		float ax = root.getAnchorX();
+		float ay = root.getAnchorY();
+		float w = root.getWidth();
+		float h = root.getHeight();
+		float sw = tree_view.getWidth();
+		float sh = tree_view.getHeight();
+		
+		float nx = (sw * .5f) - (w * .5f);
+		float ny = (sh * .9f) - (h * 1f);
+		
+		root.setPosition(nx, ny);
+		root.setAnchorPos(nx, ny+root.getHeight());
 	}
 
 	public void createNewProjectPrompt() {
@@ -1001,7 +1021,6 @@ public class BTreeEditor extends ApplicationAdapter {
 				if(template!=null) {
 					template.properitize(node);
 					node.createProperties();
-					node.showProperties();
 				}
 				if (parent != null) {
 					CreateNodeCommand c = new CreateNodeCommand(BTreeEditor.this, node, parent, -1);
@@ -1103,8 +1122,14 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public void resetTreeView() {
 		tree_view.clear();
-		tree_view.setPosition(0, 0);
 		tree_view.setScale(1f);
+		tree_view.setPosition(0, 0);
+		resetTreeViewSize();
+	}
+	
+	public void resetTreeViewSize() {
+		tree_view.setSize(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
+		
 	}
 
 	public void saveProjectAs(final int type) {
@@ -1221,8 +1246,10 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		Vector2 po = new Vector2(0, Gdx.graphics.getHeight());
 		po = stage.getViewport().unproject(po);
-		tree_view.setSize(width, height);
+		resetTreeViewSize();
 		tt.setPosition(po.x, po.y);
+		
+		
 
 	}
 
@@ -1351,6 +1378,7 @@ public class BTreeEditor extends ApplicationAdapter {
 	@Override
 	public void dispose() {
 		prefs.flush();
+		Assets.disposeTextures();
 		stage.dispose();
 		batch.dispose();
 		background.getTexture().dispose();
