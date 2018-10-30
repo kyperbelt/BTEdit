@@ -6,7 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
-import com.badlogic.gdx.scenes.scene2d.ui.Cell;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
@@ -66,7 +66,7 @@ public class BehaviorNode extends Group {
 	protected BehaviorNode parent;
 	protected Array<BehaviorNode> children;
 
-	Action laytou_action = new Action() {
+	Action layout_action = new Action() {
 		@Override
 		public boolean act(float delta) {
 			layout();
@@ -105,6 +105,13 @@ public class BehaviorNode extends Group {
 
 				if (a == right) {
 					editor.addAndExecuteCommand(new MoveNodeCommand(editor, BehaviorNode.this, parent, false));
+				}
+				
+				if (a == down) {
+					if (!properties_shown)
+						showProperties();
+					else
+						hideProperties();
 				}
 
 			}
@@ -207,14 +214,47 @@ public class BehaviorNode extends Group {
 	}
 
 	public void showProperties() {
-		property_container.add(property_table).align(Align.topLeft).grow();
+		float time = FADE;
+
+		down.setStyle(Assets.Styles.upButton);
+		properties_shown = !properties_shown;
+
+		node_table.clearActions();
+		node_table.setPosition(original_x, original_y);
+		property_container.clearActions();
+		property_container.getColor().a = 0f;
+		
+		layout();
+
+		node_table.addAction(Actions.sequence(
+				Actions.parallel(Actions.sizeTo(WIDTH, HEIGHT + property_container.getHeight(), time),
+				Actions.moveTo(original_x, original_y - property_container.getHeight(), time)),
+				layout_action
+				));
+		property_container.setVisible(true);
+		property_container.addAction(Actions.fadeIn(time));
 	}
 
 	public void hideProperties() {
-		Cell<Table> cell = property_container.getCell(property_table);
-		cell.pad(0);
-		property_table.remove();
-		property_container.layout();
+		float time = FADE;
+
+		down.setStyle(Assets.Styles.downButton);
+		properties_shown = !properties_shown;
+
+		node_table.clearActions();
+		node_table.setPosition(original_x, original_y - property_container.getHeight());
+		property_container.clearActions();
+		property_container.getColor().a = 1f;
+		
+		layout();
+
+		node_table.addAction(Actions.sequence(
+				Actions.parallel(Actions.sizeTo(WIDTH, HEIGHT, time), Actions.moveTo(original_x, original_y, time)),
+				layout_action
+				));
+		property_container.addAction(Actions.sequence(Actions.fadeOut(time), Actions.visible(false)));
+
+	
 	}
 
 	public String getNodeName() {
