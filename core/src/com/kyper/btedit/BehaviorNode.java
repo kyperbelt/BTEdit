@@ -231,6 +231,7 @@ public class BehaviorNode extends Group {
 
 	public void addNode(BehaviorNode node) {
 		node.parent = this;
+		node.layout();
 		children.add(node);
 		if (type == NodeType.SUPPLEMENT)
 			add.setVisible(false);
@@ -300,9 +301,9 @@ public class BehaviorNode extends Group {
 		left.setVisible(true);
 		right.setVisible(true);
 
-		if (this == this.parent.children.get(0)) {
+		if (this == parent.children.first()) {
 			left.setVisible(false);
-		} else if (this == this.parent.children.get(cnt - 1)) {
+		} else if (this == parent.children.peek()) {
 			right.setVisible(false);
 		}
 
@@ -348,6 +349,8 @@ public class BehaviorNode extends Group {
 		int newPos = pos - 1;
 		children.swap(newPos, pos);
 		editor.setDirty();
+		layout();
+		updateArrows();
 		updateArrowsOnChildren();
 	}
 
@@ -359,6 +362,8 @@ public class BehaviorNode extends Group {
 		int newPos = pos + 1;
 		children.swap(newPos, pos);
 		editor.setDirty();
+		layout();
+		updateArrows();
 		updateArrowsOnChildren();
 	}
 
