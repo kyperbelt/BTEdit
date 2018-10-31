@@ -2,7 +2,8 @@ package com.kyper.btedit;
 
 import com.badlogic.gdx.utils.Array;
 import com.kyper.btedit.BehaviorNode.NodeType;
-import com.kyper.btedit.NodeProperties.NodeProperty;
+import com.kyper.btedit.properties.NodeProperties;
+import com.kyper.btedit.properties.NodeProperty;
 
 public class NodeTemplate {
 	

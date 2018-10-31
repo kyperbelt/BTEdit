@@ -1,5 +1,6 @@
 package com.kyper.btedit;
 
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.scenes.scene2d.Action;
@@ -15,16 +16,19 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
 import com.kotcrab.vis.ui.widget.VisLabel;
-import com.kyper.btedit.NodeProperties.NodeProperty;
 import com.kyper.btedit.command.MoveNodeCommand;
 import com.kyper.btedit.command.RemoveNodeCommand;
+import com.kyper.btedit.properties.NodeProperties;
+import com.kyper.btedit.properties.NodeProperty;
 
 public class BehaviorNode extends Group {
-	
+
 	private static final float WIDTH = 200;
 	private static final float HEIGHT = 120;
 	private static final float ROOTPAD = 20;
 	private static final float FADE = .4f;
+
+	public static final Color H_COLOR = Color.DARK_GRAY;
 
 	public static int NWIDTH = 200;
 	public static int NHEIGHT = 100;
@@ -106,7 +110,7 @@ public class BehaviorNode extends Group {
 				if (a == right) {
 					editor.addAndExecuteCommand(new MoveNodeCommand(editor, BehaviorNode.this, parent, false));
 				}
-				
+
 				if (a == down) {
 					if (!properties_shown)
 						showProperties();
@@ -117,17 +121,15 @@ public class BehaviorNode extends Group {
 			}
 		};
 
-		
-
 		createNodeTable();
 		addActor(node_table);
 
 	}
-	
+
 	protected void setNodeParent(BehaviorNode parent) {
 		this.parent = parent;
 	}
-	
+
 	private void createNodeTable() {
 		node_table = new Table();
 		node_table.setSize(WIDTH, HEIGHT);
@@ -144,6 +146,7 @@ public class BehaviorNode extends Group {
 		node_table.add(header).height(28).pad(0).align(Align.topLeft).growX().row();
 
 		name_label = new VisLabel(nodename);
+		name_label.setColor(H_COLOR);
 		header.add(name_label);
 
 		button_table = new Table();
@@ -175,7 +178,9 @@ public class BehaviorNode extends Group {
 		down = new ImageButton(Assets.Styles.downButton);
 		down.addListener(listener);
 
-		property_table.add(new VisLabel("Properties"));
+		VisLabel plabel = new VisLabel("Properties");
+		plabel.setColor(H_COLOR);
+		property_table.add(plabel);
 		property_table.add().growX();
 		property_table.add(down).height(28).row();
 
@@ -186,21 +191,21 @@ public class BehaviorNode extends Group {
 		property_container.setVisible(false);
 
 	}
-	
-	public void setAnchorPos(float x,float y) {
+
+	public void setAnchorPos(float x, float y) {
 		anchor_x = x;
 		anchor_y = y;
 	}
-	
+
 	public float getAnchorX() {
 		return anchor_x;
 	}
-	
+
 	public float getAnchorY() {
 		return anchor_y;
 	}
-	
-	public void setOriginalPos(float x,float y) {
+
+	public void setOriginalPos(float x, float y) {
 		original_x = x;
 		original_y = y;
 	}
@@ -223,14 +228,14 @@ public class BehaviorNode extends Group {
 		node_table.setPosition(original_x, original_y);
 		property_container.clearActions();
 		property_container.getColor().a = 0f;
-		
+
 		layout();
 
-		node_table.addAction(Actions.sequence(
-				Actions.parallel(Actions.sizeTo(WIDTH, HEIGHT + property_container.getHeight(), time),
-				Actions.moveTo(original_x, original_y - property_container.getHeight(), time)),
-				layout_action
-				));
+		node_table
+				.addAction(Actions.sequence(
+						Actions.parallel(Actions.sizeTo(WIDTH, HEIGHT + property_container.getHeight(), time),
+								Actions.moveTo(original_x, original_y - property_container.getHeight(), time)),
+						layout_action));
 		property_container.setVisible(true);
 		property_container.addAction(Actions.fadeIn(time));
 	}
@@ -245,16 +250,14 @@ public class BehaviorNode extends Group {
 		node_table.setPosition(original_x, original_y - property_container.getHeight());
 		property_container.clearActions();
 		property_container.getColor().a = 1f;
-		
+
 		layout();
 
 		node_table.addAction(Actions.sequence(
 				Actions.parallel(Actions.sizeTo(WIDTH, HEIGHT, time), Actions.moveTo(original_x, original_y, time)),
-				layout_action
-				));
+				layout_action));
 		property_container.addAction(Actions.sequence(Actions.fadeOut(time), Actions.visible(false)));
 
-	
 	}
 
 	public String getNodeName() {
@@ -272,6 +275,7 @@ public class BehaviorNode extends Group {
 	public void addNode(BehaviorNode node) {
 		node.parent = this;
 		node.layout();
+		layout();
 		children.add(node);
 		if (type == NodeType.SUPPLEMENT)
 			add.setVisible(false);
@@ -282,14 +286,15 @@ public class BehaviorNode extends Group {
 		updateArrowsOnChildren();
 
 		editor.setDirty();
-		
 
-		layout();
+		getRoot().layout();
 	}
 
 	public void addNode(BehaviorNode node, int index) {
 		if (index != -1) {
 			node.parent = this;
+			node.layout();
+			layout();
 			children.insert(index, node);
 			if (type == NodeType.SUPPLEMENT)
 				add.setVisible(false);
@@ -300,9 +305,8 @@ public class BehaviorNode extends Group {
 			updateArrowsOnChildren();
 
 			editor.setDirty();
-			
 
-			layout();
+			getRoot().layout();
 		} else {
 			addNode(node);
 		}
@@ -353,7 +357,7 @@ public class BehaviorNode extends Group {
 
 		children.removeValue(node, true);
 		node.remove();
-		layout();
+		getRoot().layout();
 		if (type == NodeType.SUPPLEMENT)
 			add.setVisible(true);
 		editor.setDirty();
@@ -407,52 +411,78 @@ public class BehaviorNode extends Group {
 		updateArrowsOnChildren();
 	}
 
+	/**
+	 * do a full layout of this node and all of its children
+	 */
 	public void layout() {
+		layout(true);
+	}
+
+	/**
+	 * do a layout of this node and all of its children if child_pass is set to
+	 * true. if child_pass is false then children will not have layout() called on
+	 * them.
+	 * 
+	 * @param child_pass
+	 */
+	public void layout(boolean child_pass) {
 		float w = node_table.getWidth() + (ROOTPAD * 2);
 		float h = node_table.getHeight() + (ROOTPAD * 2);
-		
-		if(children.size!=0)
+
+		if (children.size != 0)
 			w = 0;
-		
-		//get max height and width
+
+		// get max height and width
 		float nodes_height = 0;
 		for (int i = 0; i < children.size; i++) {
 			BehaviorNode n = children.get(i);
-			w+=n.getWidth();
-			if(nodes_height < n.getHeight())
+			if(child_pass)
+				n.layout();
+			w += n.getWidth();
+			if (nodes_height < n.getHeight())
 				nodes_height = n.getHeight();
-			n.remove();
+			if (child_pass) {
+				n.remove();
+			}
 		}
-		
-		h+=nodes_height;
-		
+
+		h += nodes_height;
 
 		setSize(w, h);
-		
+
 		centerNodeTable();
-		
-		//organize child nodes
-		float last_x = 0;
-		for (int i = 0; i < children.size; i++) {
-			BehaviorNode n = children.get(i);
-			n.setPosition(last_x, (node_table.getY()));
-			n.setAnchorPos(n.getX(), n.getY());
-			last_x+=n.getWidth();
-			addActor(n);
-			n.layout();
+
+		if (child_pass) {
+
+			// organize child nodes
+			float last_x = 0;
+			for (int i = 0; i < children.size; i++) {
+				BehaviorNode n = children.get(i);
+				n.setPosition(last_x, (node_table.getY()));
+				n.setAnchorPos(n.getX(), n.getY());
+				last_x += n.getWidth();
+				addActor(n);
+				n.layout();
+			}
 		}
-		
-		
-		if(anchored) {
-			setPosition(getX(),anchor_y-getHeight());
+
+		if (anchored) {
+			setPosition(getX(), anchor_y - getHeight());
 		}
+
 	}
-	
+
+	public BehaviorNode getRoot() {
+		if (parent != null)
+			return parent.getRoot();
+		else
+			return this;
+	}
+
 	private void centerNodeTable() {
 		node_table.setPosition(getWidth() * .5f - (node_table.getWidth() * .5f),
 				getHeight() - (ROOTPAD + node_table.getHeight()));
-		setOriginalPos(getWidth() * .5f - (node_table.getWidth() * .5f), 
-				getHeight() - (ROOTPAD + HEIGHT));
+		setOriginalPos(getWidth() * .5f - (node_table.getWidth() * .5f), getHeight() - (ROOTPAD + HEIGHT));
 	}
 
 	@Override

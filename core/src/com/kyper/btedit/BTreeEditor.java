@@ -6,7 +6,6 @@
 //2. When first running, don't crash with bad path - need working directory as default, not blank
 //3. Have it remember last unique project, and have a toggle / fast option between projects
 
-
 package com.kyper.btedit;
 
 import java.io.File;
@@ -32,7 +31,6 @@ import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
-import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.ChangeListener;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
@@ -52,10 +50,9 @@ import com.kotcrab.vis.ui.widget.file.FileChooser.Mode;
 import com.kotcrab.vis.ui.widget.file.FileChooser.SelectionMode;
 import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener;
 import com.kyper.btedit.BehaviorNode.NodeType;
-import com.kyper.btedit.NodeProperties.NodeProperty;
-import com.kyper.btedit.NodeProperties.PropertyType;
 import com.kyper.btedit.command.CreateNodeCommand;
 import com.kyper.btedit.command.ICommand;
+import com.kyper.btedit.displays.PropertyDisplay;
 
 public class BTreeEditor extends ApplicationAdapter {
 
@@ -64,7 +61,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
-	public static final boolean DEBUG = true;
+	public static final boolean DEBUG = false;
 
 	public static String VERSION = "0.1";
 	public static String TITLE = "BT Edit v" + VERSION;
@@ -78,11 +75,11 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public final static int UNDO_KEY = Keys.Z;
 	public final static int REDO_KEY = Keys.Y;
-	
-	static final String LAST_SAVE_PATH = 	"last_save_path";
+
+	static final String LAST_SAVE_PATH = "last_save_path";
 	static final String RECENT_PROJECT = "recent_project_path";
 	static final String PROJECT_PATH = "project_path";
-	static final String NODES_FILE = 		"nodes_file";
+	static final String NODES_FILE = "nodes_file";
 	static final String DEFAULT_NODES_FILE = "default.nodes";
 	static final String PROJ_FILE = "btree.proj";
 
@@ -94,15 +91,15 @@ public class BTreeEditor extends ApplicationAdapter {
 	float m_dragScreenX;
 	float m_dragScreenY;
 
-	Stage stage;
+	public Stage stage;
 
 	public Table tree_view;
 
 	public Table button_window;
 
-	VisTextButton create, open, save, saveas,config;
+	VisTextButton create, open, save, saveas, config;
 	VisLabel projectLabel;
-	
+
 	public Array<String> items = new Array<String>();
 
 	public BehaviorNode current;
@@ -145,8 +142,8 @@ public class BTreeEditor extends ApplicationAdapter {
 			"		\"Repeat\": {\r\n" + //
 			"			\"properties\": {\r\n" + //
 			"				\"count\": {\r\n" + //
-			"					\"type\": \"int\",\r\n"+ //
-			"					\"value\": \"-1\"\r\n"+ //
+			"					\"type\": \"int\",\r\n" + //
+			"					\"value\": \"-1\"\r\n" + //
 			"				}\r\n" + //
 			"			}\r\n" + //
 			"		},\r\n" + //
@@ -188,8 +185,6 @@ public class BTreeEditor extends ApplicationAdapter {
 	public VisSelectBox<String> nodetype_sel;
 	public VisSelectBox<String> node_sel;
 	public VisTextButton select;
-			
-
 
 	public VisTextButton insert;
 
@@ -198,6 +193,8 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public boolean dirty = false;
 	public boolean busy = false;
+
+	public PropertyDisplay property_display;
 
 	public FileChooser projectFolderChooser;
 	public FileChooser chooser;
@@ -213,8 +210,8 @@ public class BTreeEditor extends ApplicationAdapter {
 	Table tt;
 
 	public BehaviorNode last_chosen_node;
-	
-	//config stuff
+
+	// config stuff
 	public VisWindow config_window;
 	public VisLabel node_file_label, project_ext_label, project_type_label;
 	public VisTextField node_file_textfield, project_ext_textfield, project_type_textfield;
@@ -224,9 +221,14 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	@Override
 	public void create() {
+		VisUI.load(SkinScale.X1);
+
+		// VisUI.getSkin().get("default",LabelStyle.class).fontColor = Color.DARK_GRAY;
 		Assets.loadTextures();
 		Assets.createStyles();
-		
+
+		property_display = new PropertyDisplay(this);
+
 		reader = new JsonReader();
 
 		commands = new Array<ICommand>();
@@ -246,11 +248,11 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		prefs = Gdx.app.getPreferences(PREF_NAME);
 
-		if(!prefs.contains(NODES_FILE)) {
+		if (!prefs.contains(NODES_FILE)) {
 			FileHandle nodes = Gdx.files.local(DEFAULT_NODES_FILE);
-			if(!nodes.exists()) {
+			if (!nodes.exists()) {
 				nodes.writeString(DEFAULT_NODES, false);
-			} 
+			}
 
 			String absolutePath = nodes.file().getAbsolutePath();
 			prefs.putString(NODES_FILE, absolutePath);
@@ -261,8 +263,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		if (prefs.contains(RECENT_PROJECT)) {
 			project_path_recent = prefs.getString(RECENT_PROJECT);
-		} else
-		{
+		} else {
 			project_path_recent = null;
 		}
 
@@ -279,9 +280,6 @@ public class BTreeEditor extends ApplicationAdapter {
 		setCurrentProjectFolderName(prefs.getString(PROJECT_PATH));
 		project_path = prefs.getString(PROJECT_PATH);
 
-		VisUI.load(SkinScale.X1);
-
-		VisUI.getSkin().get("default",LabelStyle.class).fontColor = Color.DARK_GRAY;
 		stage = new Stage(new ScreenViewport());
 		stage.setDebugAll(DEBUG);
 
@@ -290,8 +288,10 @@ public class BTreeEditor extends ApplicationAdapter {
 				if (!busy) {
 					float sa = 0.05f * amount;
 					float newScale = tree_view.getScaleX() - sa;
-					if (newScale < 0.2f) return true;
-					if (newScale > 3f) return true;
+					if (newScale < 0.2f)
+						return true;
+					if (newScale > 3f)
+						return true;
 
 					tree_view.setScale(newScale);
 					float dx = sa * stage.getWidth() / 2f;
@@ -312,7 +312,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			@Override
 			public boolean keyUp(int keycode) {
 
-				if(busy)
+				if (busy)
 					return false;
 
 				if (keycode == UNDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
@@ -333,12 +333,12 @@ public class BTreeEditor extends ApplicationAdapter {
 
 				return super.keyUp(keycode);
 			}
-			
+
 			@Override
 			public boolean keyDown(int keycode) {
-				if(busy)
+				if (busy)
 					return false;
-				
+
 				if (keycode == UNDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
 					stage.unfocusAll();
 					return true;
@@ -348,31 +348,27 @@ public class BTreeEditor extends ApplicationAdapter {
 					stage.unfocusAll();
 					return true;
 				}
-				
+
 				return super.keyDown(keycode);
 			}
 
 			@Override
-			public boolean	touchDragged(int screenX, int screenY, int pointer)
-			{
-					if (m_drag)
-					{
-						float dx = (screenX - m_dragScreenX);
-						float dy = (screenY - m_dragScreenY);
-						m_dragScreenX = screenX;
-						m_dragScreenY = screenY;
-						//stage.getViewport().getCamera().translate(dx,dy,0);
-						tree_view.setPosition(tree_view.getX() + dx, tree_view.getY() - dy);
-					}
-					return true;
+			public boolean touchDragged(int screenX, int screenY, int pointer) {
+				if (m_drag) {
+					float dx = (screenX - m_dragScreenX);
+					float dy = (screenY - m_dragScreenY);
+					m_dragScreenX = screenX;
+					m_dragScreenY = screenY;
+					// stage.getViewport().getCamera().translate(dx,dy,0);
+					tree_view.setPosition(tree_view.getX() + dx, tree_view.getY() - dy);
+				}
+				return true;
 			}
 
 			@Override
-			public boolean	touchDown(int screenX, int screenY, int pointer, int button)
-			{
+			public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 				m_drag = false;
-				if (button == 1)
-				{
+				if (button == 1) {
 					m_dragScreenX = screenX;
 					m_dragScreenY = screenY;
 					m_drag = true;
@@ -381,10 +377,8 @@ public class BTreeEditor extends ApplicationAdapter {
 			}
 
 			@Override
-			public boolean	touchUp(int screenX, int screenY, int pointer, int button)
-			{
-				if (m_drag && button == 1)
-				{
+			public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+				if (m_drag && button == 1) {
 					m_drag = false;
 				}
 
@@ -471,8 +465,8 @@ public class BTreeEditor extends ApplicationAdapter {
 				if (a == saveas && current != null) {
 					saveProjectAs(CLOSE);
 				}
-				
-				if(a == config) {
+
+				if (a == config) {
 					openConfig();
 				}
 			}
@@ -555,13 +549,13 @@ public class BTreeEditor extends ApplicationAdapter {
 		Gdx.input.setInputProcessor(new InputMultiplexer(input, stage));
 
 		FileHandle nodes = Gdx.files.absolute(prefs.getString(NODES_FILE));
-		if(!nodes.exists()) {
+		if (!nodes.exists()) {
 			nodes.writeString(DEFAULT_NODES, false);
 		}
-		
+
 		loadNodeTemplates(nodes);
 
-		//handle project defaults now as well
+		// handle project defaults now as well
 		FileHandle proj = Gdx.files.external(project_path + "/" + PROJ_FILE);
 		if (!proj.exists()) {
 			proj.writeString(DEFAULT_PROJ, false);
@@ -569,7 +563,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		loadProject(proj);
 		setProjectLabel();
-		
+
 //		FileHandle composites = Gdx.files.local("composite_nodes.txt");
 //		FileHandle supplements = Gdx.files.local("supplement_nodes.txt");
 //		FileHandle leafs = Gdx.files.local("leaf_nodes.txt");
@@ -604,8 +598,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		batch = new SpriteBatch();
 	}
 
-	public void loadProject(FileHandle proj)
-	{
+	public void loadProject(FileHandle proj) {
 		JsonValue root = new JsonReader().parse(proj);
 
 		JsonValue p_type = root.get("type");
@@ -614,13 +607,14 @@ public class BTreeEditor extends ApplicationAdapter {
 		project_type = p_type.asString();
 		Gdx.app.log("loadProject", "ext=" + p_ext);
 	}
-	
+
 	/**
 	 * get the node templates from the file
+	 * 
 	 * @param nodes
 	 */
 	public void loadNodeTemplates(FileHandle nodes) {
-		
+
 		m_defaultRootTemplate = null;
 
 		JsonValue root = new JsonReader().parse(nodes);
@@ -630,43 +624,40 @@ public class BTreeEditor extends ApplicationAdapter {
 		leaf_nodes = new Array<NodeTemplate>();
 
 		JsonValue composite = root.get("composite");
-		System.out.println("json.size : "+composite.size);
+		System.out.println("json.size : " + composite.size);
 		templateFromJson(composite_nodes, composite, NodeType.COMPOSITE);
-		
+
 		JsonValue supplement = root.get("supplement");
 		templateFromJson(supplement_nodes, supplement, NodeType.SUPPLEMENT);
-		
+
 		JsonValue leaf = root.get("leaf");
 		templateFromJson(leaf_nodes, leaf, NodeType.LEAF);
 	}
 
-	public void setCurrentProjectFolderName(String path)
-	{
+	public void setCurrentProjectFolderName(String path) {
 		String[] p = path.split("/");
 		int i = p.length;
-		m_currentProjectFolderName = p[i-1];
+		m_currentProjectFolderName = p[i - 1];
 	}
 
-	public String makeRecentProjectLabel(String path)
-	{
+	public String makeRecentProjectLabel(String path) {
 		String[] p = path.split("/");
 		int i = p.length;
-		return p[i-1];
+		return p[i - 1];
 	}
 
-	public void changeCurrentProject(FileHandle f)
-	{
-		if (f.path() != project_path)
-		{
+	public void changeCurrentProject(FileHandle f) {
+		if (f.path() != project_path) {
 			project_path_recent = project_path;
 			prefs.putString(RECENT_PROJECT, project_path_recent);
 			last_save_path = f.path();
 			project_path = f.path();
 
-			//check if default_nodes.json is there, create it if not, and load new templates
+			// check if default_nodes.json is there, create it if not, and load new
+			// templates
 			String nodesFilePath = f.path() + "/" + DEFAULT_NODES_FILE;
 			FileHandle nodes = Gdx.files.absolute(nodesFilePath);
-			if(!nodes.exists()) {
+			if (!nodes.exists()) {
 				nodes.writeString(DEFAULT_NODES, false);
 			}
 
@@ -688,27 +679,24 @@ public class BTreeEditor extends ApplicationAdapter {
 			node_file_textfield.setText(m_currentProjectFolderName);
 			setProjectLabel();
 
-			if (project_path_recent == null)
-			{
+			if (project_path_recent == null) {
 				recent_project_button.setVisible(false);
 				recent_project_button.setText("None");
-			} else
-			{
+			} else {
 				recent_project_button.setVisible(true);
 				recent_project_button.setText(makeRecentProjectLabel(project_path_recent));
 			}
 		}
 	}
 
-	public void setProjectLabel()
-	{
+	public void setProjectLabel() {
 		projectLabel.setText(m_currentProjectFolderName + " : ." + project_ext + " : " + project_type);
 	}
-	
+
 	public void openConfig() {
-		if(config_window == null) {
+		if (config_window == null) {
 			config_window = new VisWindow("Open / Create Project");
-			
+
 			node_file_label = new VisLabel("Project Folder:");
 			node_file_textfield = new VisTextField();
 
@@ -756,10 +744,10 @@ public class BTreeEditor extends ApplicationAdapter {
 				@Override
 				public void clicked(InputEvent event, float x, float y) {
 					/*
-					String filepath = node_file_textfield.getText();
-					if(Gdx.files.external(filepath).exists()) {
-						prefs.putString(NODES_FILE, node_file_textfield.getText());
-					} */
+					 * String filepath = node_file_textfield.getText();
+					 * if(Gdx.files.external(filepath).exists()) { prefs.putString(NODES_FILE,
+					 * node_file_textfield.getText()); }
+					 */
 					busy = false;
 					project_ext = project_ext_textfield.getText();
 					project_type = project_type_textfield.getText();
@@ -770,7 +758,7 @@ public class BTreeEditor extends ApplicationAdapter {
 					config_window.remove();
 				}
 			});
-			
+
 			config_window.setSize(500, 280);
 			config_window.add(vlabel).padTop(5).pad(5);
 			config_window.add(recent_project_button).growX().row();
@@ -790,76 +778,71 @@ public class BTreeEditor extends ApplicationAdapter {
 			config_window.addCloseButton();
 		}
 
-		if (project_path_recent == null)
-		{
+		if (project_path_recent == null) {
 			recent_project_button.setVisible(false);
 			recent_project_button.setText("None");
-		} else
-		{
+		} else {
 			recent_project_button.setVisible(true);
 			recent_project_button.setText(makeRecentProjectLabel(project_path_recent));
 		}
-		
 
-
-		if (m_currentProjectFolderName != null)
-		{
+		if (m_currentProjectFolderName != null) {
 			node_file_textfield.setText(m_currentProjectFolderName);
 		}
-		
+
 		centerActor(config_window);
 		stage.addActor(config_window);
-		
-		
+
 	}
-	
+
 	/**
 	 * save the node templates to the file
+	 * 
 	 * @param nodes
 	 */
 	public void saveNodeTemplates(FileHandle nodes) {
 		String json = "{ \n";
-		json+=templatesToJson(NodeType.COMPOSITE,1, composite_nodes)+",";
-		json+=templatesToJson(NodeType.SUPPLEMENT,1, supplement_nodes)+",";
-		json+=templatesToJson(NodeType.LEAF,1, leaf_nodes);
-		json+="\n}";
+		json += templatesToJson(NodeType.COMPOSITE, 1, composite_nodes) + ",";
+		json += templatesToJson(NodeType.SUPPLEMENT, 1, supplement_nodes) + ",";
+		json += templatesToJson(NodeType.LEAF, 1, leaf_nodes);
+		json += "\n}";
 	}
-	
-	private void templateFromJson(Array<NodeTemplate> templates,JsonValue json,NodeType type) {
-		
+
+	private void templateFromJson(Array<NodeTemplate> templates, JsonValue json, NodeType type) {
+
 		for (int i = 0; i < json.size; i++) {
 			JsonValue node = json.get(i);
-			System.out.println("templated added to "+type.name() +" :"+node.name);
+			System.out.println("templated added to " + type.name() + " :" + node.name);
 			NodeTemplate template = new NodeTemplate(node.name, type);
 			JsonValue properties = node.get("properties");
-			if(properties != null) {
+			if (properties != null) {
 				template.getProperties().fromJson(properties);
 			}
 
 			JsonValue isDefault = node.get("root");
 			if (isDefault != null) {
-				//right now if there always assumes true!!!
+				// right now if there always assumes true!!!
 				m_defaultRootTemplate = template;
 				m_defaultRootTemplate.setAsRoot();
 				templates.add(template);
-			} else
-			{	
+			} else {
 				// only add to chooser if it's not default
 				// this is useful for defining a root node always
-				// just set node type to "root"			
+				// just set node type to "root"
 				templates.add(template);
 			}
 
 		}
 	}
-	
-	private String templatesToJson(NodeType type,int indent,Array<NodeTemplate> templates) {
-		String json = "\n"+Utils.tab(indent)+"\""+type.name().toLowerCase()+"\" : {"+(templates.size == 0 ? "":"\n");
+
+	private String templatesToJson(NodeType type, int indent, Array<NodeTemplate> templates) {
+		String json = "\n" + Utils.tab(indent) + "\"" + type.name().toLowerCase() + "\" : {"
+				+ (templates.size == 0 ? "" : "\n");
 		for (int i = 0; i < templates.size; i++) {
 			NodeTemplate t = templates.get(i);
-			json+=t.getJson(indent+1)+(i == templates.size -1 ? "":",")+"\n";
+			json += t.getJson(indent + 1) + (i == templates.size - 1 ? "" : ",") + "\n";
 		}
-		json+=Utils.tab(indent)+"}";
+		json += Utils.tab(indent) + "}";
 		return json;
 	}
 
@@ -910,7 +893,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		resetTreeView();
 		centerNode(root);
 		NodeTemplate template = getTemplate(root.getNodeName(), root.type);
-		if(template!=null) {
+		if (template != null) {
 			Gdx.app.log("createNewProject", "template = " + template);
 			template.properitize(root);
 			root.createProperties();
@@ -924,7 +907,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		Gdx.graphics.setTitle(TITLE + " - " + project_name);
 
 	}
-	
+
 	public void centerNode(BehaviorNode root) {
 		float ax = root.getAnchorX();
 		float ay = root.getAnchorY();
@@ -932,26 +915,25 @@ public class BTreeEditor extends ApplicationAdapter {
 		float h = root.getHeight();
 		float sw = tree_view.getWidth();
 		float sh = tree_view.getHeight();
-		
+
 		float nx = (sw * .5f) - (w * .5f);
 		float ny = (sh * .9f) - (h * 1f);
-		
+
 		root.setPosition(nx, ny);
-		root.setAnchorPos(nx, ny+root.getHeight());
+		root.setAnchorPos(nx, ny + root.getHeight());
 	}
 
 	public void createNewProjectPrompt() {
 
-		if (m_defaultRootTemplate != null)
-		{
-				String nodetype = nodetype_sel.getSelected();
-				String name = node_sel.getSelected();
-				BehaviorNode node = new BehaviorNode(BTreeEditor.this, m_defaultRootTemplate.getNodeType(), m_defaultRootTemplate.getNodeName());
-				createNewProject(DEFAULT_NAME, node);
-				node.updateArrows();
-				busy = false;
-		} else
-		{
+		if (m_defaultRootTemplate != null) {
+			String nodetype = nodetype_sel.getSelected();
+			String name = node_sel.getSelected();
+			BehaviorNode node = new BehaviorNode(BTreeEditor.this, m_defaultRootTemplate.getNodeType(),
+					m_defaultRootTemplate.getNodeName());
+			createNewProject(DEFAULT_NAME, node);
+			node.updateArrows();
+			busy = false;
+		} else {
 			// show node chooser only if default not defined for new project
 			busy = true;
 			centerActor(node_chooser);
@@ -962,7 +944,8 @@ public class BTreeEditor extends ApplicationAdapter {
 				public void clicked(InputEvent event, float x, float y) {
 					String nodetype = nodetype_sel.getSelected();
 					String name = node_sel.getSelected();
-					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()),
+							name);
 					createNewProject(DEFAULT_NAME, node);
 					node.updateArrows();
 					node_chooser.fadeOut();
@@ -975,7 +958,8 @@ public class BTreeEditor extends ApplicationAdapter {
 				public void clicked(InputEvent event, float x, float y) {
 					String nodetype = nodetype_sel.getSelected();
 					String name = node_sel.getSelected();
-					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()),
+							name);
 					createNewProject(DEFAULT_NAME, node);
 					node.updateArrows();
 					node_chooser.fadeOut();
@@ -986,9 +970,9 @@ public class BTreeEditor extends ApplicationAdapter {
 			stage.addActor(node_chooser);
 		}
 	}
-	
-	private NodeTemplate getTemplate(String name,NodeType type) {
-		switch(type) {
+
+	private NodeTemplate getTemplate(String name, NodeType type) {
+		switch (type) {
 		case COMPOSITE:
 			return NodeTemplate.getTemplateByName(composite_nodes, name);
 		case SUPPLEMENT:
@@ -999,10 +983,10 @@ public class BTreeEditor extends ApplicationAdapter {
 		return null;
 	}
 
-	public void centerCamera(Actor node)
-	{
-		//Gdx.app.log("CenterCamera", "nodex = " + node.getX());
-		//stage.getViewport().getCamera().lookAt(node.getX(), node.getY(), stage.getViewport().getCamera().position.z);
+	public void centerCamera(Actor node) {
+		// Gdx.app.log("CenterCamera", "nodex = " + node.getX());
+		// stage.getViewport().getCamera().lookAt(node.getX(), node.getY(),
+		// stage.getViewport().getCamera().position.z);
 	}
 
 	public void createNewNode(final BehaviorNode parent) {
@@ -1018,7 +1002,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				String name = node_sel.getSelected();
 				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
 				NodeTemplate template = getTemplate(name, NodeType.valueOf(nodetype.toUpperCase()));
-				if(template!=null) {
+				if (template != null) {
 					template.properitize(node);
 					node.createProperties();
 				}
@@ -1039,7 +1023,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				String name = node_sel.getSelected();
 				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
 				NodeTemplate template = getTemplate(name, NodeType.valueOf(nodetype.toUpperCase()));
-				if(template!=null) {
+				if (template != null) {
 					template.properitize(node);
 					node.createProperties();
 				}
@@ -1125,10 +1109,10 @@ public class BTreeEditor extends ApplicationAdapter {
 		tree_view.setPosition(0, 0);
 		resetTreeViewSize();
 	}
-	
+
 	public void resetTreeViewSize() {
-		tree_view.setSize(Gdx.graphics.getWidth(),Gdx.graphics.getHeight());
-		
+		tree_view.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
 	}
 
 	public void saveProjectAs(final int type) {
@@ -1140,8 +1124,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			protected void selected(FileHandle file) {
 				busy = false;
 				String name = file.name();
-				if (!name.contains("." + project_ext))
-				{
+				if (!name.contains("." + project_ext)) {
 					String path = file.path() + "." + project_ext;
 					file.delete();
 					file = Gdx.files.absolute(path);
@@ -1247,8 +1230,6 @@ public class BTreeEditor extends ApplicationAdapter {
 		po = stage.getViewport().unproject(po);
 		resetTreeViewSize();
 		tt.setPosition(po.x, po.y);
-		
-		
 
 	}
 
@@ -1336,41 +1317,40 @@ public class BTreeEditor extends ApplicationAdapter {
 		});
 	}
 
-	private void centerActor(Actor a) {
+	public void centerActor(Actor a) {
 		Vector2 position = new Vector2(Gdx.graphics.getWidth() * .5f - a.getWidth() * .5f,
 				Gdx.graphics.getHeight() * .5f - a.getHeight() * .5f);
 		a.setPosition(position.x, position.y);
 	}
 
-	public void writeProjectFile()
-	{
+	public void writeProjectFile() {
 		FileHandle proj = Gdx.files.absolute(project_path + "/" + PROJ_FILE);
 		if (!proj.exists()) {
 			return;
 		}
 
 		String tmp = "{\r\n" + //
-			"	\"type\": \"%TYPE%\",\r\n  \"ext\": \"%EXT%\" \r\n}";
+				"	\"type\": \"%TYPE%\",\r\n  \"ext\": \"%EXT%\" \r\n}";
 
-			tmp = tmp.replaceAll("%TYPE%", project_type);
-			tmp = tmp.replaceAll("%EXT%", project_ext);
+		tmp = tmp.replaceAll("%TYPE%", project_type);
+		tmp = tmp.replaceAll("%EXT%", project_ext);
 
-			//Gdx.app.log("TMP",tmp);
+		// Gdx.app.log("TMP",tmp);
 
-			proj.writeString(tmp, false);
+		proj.writeString(tmp, false);
 	}
 
 	public boolean exit() {
-		Gdx.app.log("exit()","exit starting");
+		Gdx.app.log("exit()", "exit starting");
 		if (busy)
 			return false;
 		if (shouldSave()) {
-			Gdx.app.log("exit()","saveProjectPrompt must be shown");
+			Gdx.app.log("exit()", "saveProjectPrompt must be shown");
 			saveProjectPrompt(CLOSE);
-			Gdx.app.log("exit()","saveProjectPrompt am back from now.");
+			Gdx.app.log("exit()", "saveProjectPrompt am back from now.");
 			return false;
 		}
-		Gdx.app.log("exit()","exit finishing");
+		Gdx.app.log("exit()", "exit finishing");
 		return true;
 	}
 
@@ -1384,5 +1364,3 @@ public class BTreeEditor extends ApplicationAdapter {
 	}
 
 }
-
-

@@ -1,10 +1,13 @@
 package com.kyper.btedit;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton.ImageButtonStyle;
+import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
 import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
+import com.kotcrab.vis.ui.VisUI;
 
 public class Assets {
 	
@@ -31,6 +34,8 @@ public class Assets {
 		public static ImageButtonStyle upButton;
 		public static ImageButtonStyle downButton;
 		public static ImageButtonStyle editButton;
+		
+		public static LabelStyle headerLabel;
 	}
 	
 	public static void createStyles() {
@@ -68,6 +73,8 @@ public class Assets {
 		Styles.editButton.imageUp = new TextureRegionDrawable(new TextureRegion(Textures.Gear));
 		Styles.editButton.pressedOffsetX = -3;
 		Styles.editButton.pressedOffsetY = -3;
+		
+		//Styles.headerLabel = new LabelStyle(VisUI.getSkin().getFont("default"),Color.GRAY);
 		
 	}
 	
