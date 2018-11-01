@@ -321,16 +321,16 @@ public class BehaviorNode extends VisWindow {
 	public String getJson(int indent) {
 		String json = Utils.tab(indent) + "\"" + nodename + "\" :" + "{\n";
 		json += properties.toJson(indent + 1) + ",\n";
-		json += Utils.tab(indent + 1) + "\"children\" : {";
+		json += Utils.tab(indent + 1) + "\"children\" : [";
 		for (int i = 0; i < children.size; i++) {
 
-			json += "\n" + children.get(i).getJson(indent + 2);
+			json += "\n{" + children.get(i).getJson(indent + 2);
 			if (i + 1 < children.size)
-				json += ",\n";
+				json += "},\n";
 			else
-				json += "\n";
+				json += "}\n";
 		}
-		json += children.size == 0 ? "}\n" : Utils.tab(indent + 1) + "}\n";
+		json += children.size == 0 ? "]\n" : Utils.tab(indent + 1) + "]\n";
 		json += Utils.tab(indent) + "}";
 		return json;
 	}
