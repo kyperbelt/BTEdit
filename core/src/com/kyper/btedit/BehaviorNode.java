@@ -2,7 +2,9 @@ package com.kyper.btedit;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Batch;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -16,6 +18,7 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
 import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kyper.btedit.Assets.Textures;
 import com.kyper.btedit.command.MoveNodeCommand;
 import com.kyper.btedit.command.RemoveNodeCommand;
 import com.kyper.btedit.properties.NodeProperties;
@@ -51,6 +54,14 @@ public class BehaviorNode extends Group {
 	ImageButton down;
 	Table property_table;
 	Table property_container;
+	
+	private static Vector2 node1,node2,center;
+	
+	static {
+		node1 = new Vector2();
+		node2 = new Vector2();
+		center = new Vector2();
+	}
 
 	private boolean properties_shown = false;
 
@@ -81,6 +92,7 @@ public class BehaviorNode extends Group {
 	boolean p_check = false;
 
 	public BehaviorNode(final BTreeEditor editor, NodeType type, String name) {
+		setTransform(true);
 		properties = new NodeProperties();
 		this.nodename = name;
 		this.editor = editor;
@@ -124,6 +136,26 @@ public class BehaviorNode extends Group {
 		createNodeTable();
 		addActor(node_table);
 
+	}
+	
+	@Override
+	public void draw(Batch batch, float parentAlpha) {
+		float width = 16;
+		for (int i = 0; i < children.size; i++) {
+			BehaviorNode n = children.get(i);
+			Table nt = n.node_table;
+			
+			node1.set(node_table.getX()+node_table.getWidth()*.5f,node_table.getY()+node_table.getHeight()*.5f);
+			node2.set(n.getX()+nt.getX()+nt.getWidth()*.5f,n.getY()+nt.getY()+nt.getHeight()*.9f);
+			center.set((node1.x+node2.x)/2, (node1.y + node2.y)/2);
+			float distance = node1.dst(node2);
+			float angle = (float) (180.0 / Math.PI * Math.atan2(node1.x - node2.x, node2.y - node1.y));
+			//System.out.println("points: node1["+node1+"] node2["+node2+"] angle:"+angle);
+			Textures.line_patch.draw(batch,getX()+center.x - width*.5f,getY()+center.y-distance * .5f, width * .5f, distance * .5f, width, distance	,1f, 1f, angle);
+			
+			
+		}
+		super.draw(batch, parentAlpha);
 	}
 
 	protected void setNodeParent(BehaviorNode parent) {
@@ -288,6 +320,8 @@ public class BehaviorNode extends Group {
 		editor.setDirty();
 
 		getRoot().layout();
+		
+		
 	}
 
 	public void addNode(BehaviorNode node, int index) {
@@ -469,6 +503,8 @@ public class BehaviorNode extends Group {
 		if (anchored) {
 			setPosition(getX(), anchor_y - getHeight());
 		}
+		
+		editor.centerNode(getRoot());
 
 	}
 

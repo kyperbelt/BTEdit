@@ -90,10 +90,12 @@ public class BTreeEditor extends ApplicationAdapter {
 	boolean m_drag = false;
 	float m_dragScreenX;
 	float m_dragScreenY;
+	
+	
 
 	public Stage stage;
 
-	public Table tree_view;
+	public Group tree_view;
 
 	public Table button_window;
 
@@ -218,6 +220,8 @@ public class BTreeEditor extends ApplicationAdapter {
 	public VisTextButton node_file_change_button, recent_project_button;
 	public FileChooser nodefile_chooser;
 	public VisTextButton accept_config;
+	
+	public GroupCamera node_camera;
 
 	@Override
 	public void create() {
@@ -287,16 +291,18 @@ public class BTreeEditor extends ApplicationAdapter {
 			public boolean scrolled(int amount) {
 				if (!busy) {
 					float sa = 0.05f * amount;
-					float newScale = tree_view.getScaleX() - sa;
+					float newScale = node_camera.getZoom() - sa;
 					if (newScale < 0.2f)
-						return true;
-					if (newScale > 3f)
-						return true;
+						newScale = .2f;
+					if (newScale > 1f)
+						newScale = 1f;
 
-					tree_view.setScale(newScale);
-					float dx = sa * stage.getWidth() / 2f;
-					float dy = sa * stage.getHeight();
-					tree_view.setPosition(tree_view.getX() + dx, tree_view.getY() + dy);
+					node_camera.setZoom(newScale);
+//					float dx = sa * stage.getWidth() / 2f;
+//					float dy = sa * stage.getHeight();
+//					node_camera.translate(-dx, dy);
+					
+					node_camera.update();
 					return true;
 				} else {
 					return false;
@@ -360,7 +366,8 @@ public class BTreeEditor extends ApplicationAdapter {
 					m_dragScreenX = screenX;
 					m_dragScreenY = screenY;
 					// stage.getViewport().getCamera().translate(dx,dy,0);
-					tree_view.setPosition(tree_view.getX() + dx, tree_view.getY() - dy);
+					node_camera.translate(-dx, -dy);
+					node_camera.update();
 				}
 				return true;
 			}
@@ -368,7 +375,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			@Override
 			public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 				m_drag = false;
-				if (button == 1) {
+				if (button == 1 && busy!=true) {
 					m_dragScreenX = screenX;
 					m_dragScreenY = screenY;
 					m_drag = true;
@@ -423,11 +430,13 @@ public class BTreeEditor extends ApplicationAdapter {
 		projectFolderChooser.setSelectionMode(SelectionMode.DIRECTORIES);
 
 		Group root = stage.getRoot();
-		tree_view = new Table();
+		tree_view = new Group();
 		tree_view.setTransform(true);
 		tree_view.setSize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
 		// tree_view.setFillParent(true);
 		root.addActor(tree_view);
+		
+		node_camera = new GroupCamera(Gdx.graphics.getWidth(), Gdx.graphics.getHeight(), tree_view);
 
 		button_window = new Table();
 		button_window.setBackground(VisUI.getSkin().getDrawable("button"));
@@ -1105,8 +1114,9 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public void resetTreeView() {
 		tree_view.clear();
-		tree_view.setScale(1f);
-		tree_view.setPosition(0, 0);
+		node_camera.setPosition(0, 0);
+		node_camera.setZoom(1f);
+		node_camera.update();
 		resetTreeViewSize();
 	}
 
@@ -1228,8 +1238,10 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		Vector2 po = new Vector2(0, Gdx.graphics.getHeight());
 		po = stage.getViewport().unproject(po);
-		resetTreeViewSize();
-		tt.setPosition(po.x, po.y);
+		node_camera.resize(width, height);
+		node_camera.update();
+//		resetTreeViewSize();
+//		tt.setPosition(po.x, po.y);
 
 	}
 

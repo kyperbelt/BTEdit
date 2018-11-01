@@ -3,6 +3,7 @@ package com.kyper.btedit;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton.ImageButtonStyle;
 import com.badlogic.gdx.scenes.scene2d.ui.Label.LabelStyle;
@@ -24,7 +25,12 @@ public class Assets {
 		public static Texture Cross;
 		public static Texture Plus;
 		
+		public static Texture Line;
+		public static NinePatch line_patch;
+		
 	}
+	
+	
 	
 	public static class Styles{
 		public static ImageButtonStyle leftButton;
@@ -91,6 +97,9 @@ public class Assets {
 		Textures.Down = new Texture(Gdx.files.internal("down.png"));
 		Textures.Cross = new Texture(Gdx.files.internal("cross.png"));
 		Textures.Plus = new Texture(Gdx.files.internal("plus.png"));
+		Textures.Line = new Texture(Gdx.files.internal("line.png"));
+		
+		Textures.line_patch = new NinePatch(Textures.Line,0,0,4,4);
 		
 		
 	}
