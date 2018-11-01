@@ -54,6 +54,13 @@ public class NodeProperties {
 		}
 		return null;
 	}
+	
+	public void makeCopyOf(NodeProperties properties) {
+		getProperties().clear();
+		for (int i = 0; i < properties.getProperties().size; i++) {
+			addPropety(properties.getProperties().get(i).getCopy());
+		}
+	}
 
 	/**
 	 * get the properties in json format proper

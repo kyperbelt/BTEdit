@@ -55,6 +55,11 @@ public class NodeProperty {
 		
 	}
 	
+	public NodeProperty getCopy() {
+		NodeProperty copy = new NodeProperty(name, type,value);
+		return copy;
+	}
+	
 	public Table getPropertyTable(final BTreeEditor editor) {
 		
 

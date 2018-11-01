@@ -9,6 +9,7 @@ import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.actions.Actions;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
@@ -43,7 +44,7 @@ public class BehaviorNode extends Group {
 	String nodename;
 	public NodeType type;
 
-	Table node_table;
+	public Table node_table;
 	Table header;
 	VisLabel name_label;
 	Table button_table;
@@ -104,6 +105,7 @@ public class BehaviorNode extends Group {
 			@Override
 			public void clicked(InputEvent event, float x, float y) {
 				Actor a = event.getListenerActor();
+				selectThisNode();
 
 				if (a == add) {
 					editor.createNewNode(BehaviorNode.this);
@@ -161,11 +163,22 @@ public class BehaviorNode extends Group {
 	protected void setNodeParent(BehaviorNode parent) {
 		this.parent = parent;
 	}
+	
+	public void selectThisNode() {
+		editor.setSelectedNode(BehaviorNode.this);
+	}
 
 	private void createNodeTable() {
 		node_table = new Table();
 		node_table.setSize(WIDTH, HEIGHT);
 		node_table.align(Align.topLeft);
+		node_table.setTouchable(Touchable.enabled);
+		node_table.addListener(new ClickListener() {
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				selectThisNode();
+			}
+		});
 
 		NinePatch bg_patch = new NinePatch(getTexture(), 14, 14, 28, 14);
 		NinePatchDrawable bg = new NinePatchDrawable(bg_patch);
@@ -179,6 +192,7 @@ public class BehaviorNode extends Group {
 
 		name_label = new VisLabel(nodename);
 		name_label.setColor(H_COLOR);
+		name_label.setTouchable(Touchable.disabled);
 		header.add(name_label);
 
 		button_table = new Table();
@@ -212,6 +226,7 @@ public class BehaviorNode extends Group {
 
 		VisLabel plabel = new VisLabel("Properties");
 		plabel.setColor(H_COLOR);
+		plabel.setTouchable(Touchable.disabled);
 		property_table.add(plabel);
 		property_table.add().growX();
 		property_table.add(down).height(28).row();
@@ -581,6 +596,18 @@ public class BehaviorNode extends Group {
 		}
 
 		return n;
+	}
+	
+	public BehaviorNode getCopy() {
+		BehaviorNode copy = new BehaviorNode(editor, type, nodename);
+		copy.properties.makeCopyOf(properties);
+		
+		for (int i = 0; i < children.size; i++) {
+			BehaviorNode c = children.get(i).getCopy();
+			copy.addNode(c);
+		}
+		
+		return copy;
 	}
 
 	private Texture getTexture() {

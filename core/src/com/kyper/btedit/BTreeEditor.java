@@ -75,6 +75,9 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public final static int UNDO_KEY = Keys.Z;
 	public final static int REDO_KEY = Keys.Y;
+	public final static int CUT_KEY = Keys.X;
+	public final static int COPY_KEY = Keys.C;
+	public final static int PASTE_KEY = Keys.V;
 
 	static final String LAST_SAVE_PATH = "last_save_path";
 	static final String RECENT_PROJECT = "recent_project_path";
@@ -98,13 +101,17 @@ public class BTreeEditor extends ApplicationAdapter {
 	public Group tree_view;
 
 	public Table button_window;
+	
+	private BehaviorNode selected;
+	private BehaviorNode clipboard;
+	public BehaviorNode current;
 
 	VisTextButton create, open, save, saveas, config;
 	VisLabel projectLabel;
 
 	public Array<String> items = new Array<String>();
 
-	public BehaviorNode current;
+	
 	public String project_name;
 	public String project_path;
 	public String project_type;
@@ -115,67 +122,7 @@ public class BTreeEditor extends ApplicationAdapter {
 	public String m_currentProjectFolderName = null;
 	public NodeTemplate m_defaultRootTemplate = null;
 
-	public static final String DEFAULT_PROJ = "{\r\n" + //
-			"	\"type\": \"BehaviorTree\",\r\n  \"ext\": \"btree\" \r\n}";
-
-	public static final String DEFAULT_NODES = "{\r\n" + //
-			"	\"composite\": {\r\n" + //
-			"		\"Sequence\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		},\r\n" + //
-			"		\"Selector\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		},\r\n" + //
-			"		\"RandomSequence\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		},\r\n" + //
-			"		\"RandomSelector\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		}\r\n" + //
-			"\r\n" + //
-			"	},\r\n" + //
-			"	\"supplement\": {\r\n" + //
-			"		\"Invert\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		},\r\n" + //
-			"		\"Success\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		},\r\n" + //
-			"		\"Repeat\": {\r\n" + //
-			"			\"properties\": {\r\n" + //
-			"				\"count\": {\r\n" + //
-			"					\"type\": \"int\",\r\n" + //
-			"					\"value\": \"-1\"\r\n" + //
-			"				}\r\n" + //
-			"			}\r\n" + //
-			"		},\r\n" + //
-			"		\"RepeatUntilFail\": {\r\n" + //
-			"			\"properties\": {}\r\n" + //
-			"		}\r\n" + //
-			"	},\r\n" + //
-			"	\"leaf\": {\r\n" + //
-			"		\"Test\": {\r\n" + //
-			"			\"properties\": {\r\n" + //
-			"				\"property1\": {\r\n" + //
-			"					\"type\": \"string\"\r\n" + //
-			"				},\r\n" + //
-			"				\"property2\": {\r\n" + //
-			"					\"type\": \"bool\",\r\n" + //
-			"					\"value\": \"false\"\r\n" + //
-			"				}\r\n" + //
-			"			}\r\n" + //
-			"		},\r\n" + //
-			"		\"Wait\": {\r\n" + //
-			"			\"properties\": {\r\n" + //
-			"				\"time\": {\r\n" + //
-			"					\"type\": \"int\",\r\n" + //
-			"					\"value\": \"1\"\r\n" + //
-			"				}\r\n" + //
-			"			}\r\n" + //
-			"		}\r\n" + //
-			"\r\n" + //
-			"	}\r\n" + //
-			"}";//
+	
 
 	public Preferences prefs;
 
@@ -255,7 +202,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		if (!prefs.contains(NODES_FILE)) {
 			FileHandle nodes = Gdx.files.local(DEFAULT_NODES_FILE);
 			if (!nodes.exists()) {
-				nodes.writeString(DEFAULT_NODES, false);
+				nodes.writeString(Utils.DEFAULT_NODES, false);
 			}
 
 			String absolutePath = nodes.file().getAbsolutePath();
@@ -332,8 +279,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				if (keycode == REDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
 					stage.unfocusAll();
 					redo();
-					System.out.println(String.format("REDO : current index = %s | command size = %s", command_index,
-							commands.size));
+					
 					return true;
 				}
 
@@ -559,7 +505,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		FileHandle nodes = Gdx.files.absolute(prefs.getString(NODES_FILE));
 		if (!nodes.exists()) {
-			nodes.writeString(DEFAULT_NODES, false);
+			nodes.writeString(Utils.DEFAULT_NODES, false);
 		}
 
 		loadNodeTemplates(nodes);
@@ -567,7 +513,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		// handle project defaults now as well
 		FileHandle proj = Gdx.files.external(project_path + "/" + PROJ_FILE);
 		if (!proj.exists()) {
-			proj.writeString(DEFAULT_PROJ, false);
+			proj.writeString(Utils.DEFAULT_PROJ, false);
 		}
 
 		loadProject(proj);
@@ -605,6 +551,27 @@ public class BTreeEditor extends ApplicationAdapter {
 		setCorrectNodes();
 
 		batch = new SpriteBatch();
+	}
+	public void setClipboard(BehaviorNode clipboard) {
+		this.clipboard = clipboard;
+	}
+	
+	public BehaviorNode getClipboard() {
+		return clipboard;
+	}
+	
+	public void setSelectedNode(BehaviorNode selected) {
+		if(this.selected != null) {
+			this.selected.node_table.setColor(Color.WHITE);
+			if(selected != null)
+				selected.node_table.setColor(Color.LIGHT_GRAY);
+		}
+		this.selected = selected;
+		
+	}
+	
+	public BehaviorNode getSelectedNode() {
+		return this.selected;
 	}
 
 	public void loadProject(FileHandle proj) {
@@ -667,7 +634,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			String nodesFilePath = f.path() + "/" + DEFAULT_NODES_FILE;
 			FileHandle nodes = Gdx.files.absolute(nodesFilePath);
 			if (!nodes.exists()) {
-				nodes.writeString(DEFAULT_NODES, false);
+				nodes.writeString(Utils.DEFAULT_NODES, false);
 			}
 
 			loadNodeTemplates(nodes);
@@ -677,7 +644,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 			FileHandle proj = Gdx.files.absolute(project_path + "/" + PROJ_FILE);
 			if (!proj.exists()) {
-				proj.writeString(DEFAULT_PROJ, false);
+				proj.writeString(Utils.DEFAULT_PROJ, false);
 			}
 
 			loadProject(proj);

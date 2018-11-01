@@ -42,6 +42,7 @@ public class CreateNodeCommand implements ICommand {
 		} else {
 			if (index == -1) {
 				parent.addNode(node);
+				editor.setSelectedNode(node);
 			}
 
 		}
@@ -55,6 +56,7 @@ public class CreateNodeCommand implements ICommand {
 
 			if (index == -1) {
 				parent.removeNode(node);
+				editor.setSelectedNode(parent);
 			}
 		}
 	}
