@@ -511,8 +511,9 @@ public class BTreeEditor extends ApplicationAdapter {
 		loadNodeTemplates(nodes);
 
 		// handle project defaults now as well
-		FileHandle proj = Gdx.files.external(project_path + "/" + PROJ_FILE);
+		FileHandle proj = Gdx.files.absolute(project_path + "/" + PROJ_FILE);
 		if (!proj.exists()) {
+			proj = Gdx.files.external(project_path + "/" + PROJ_FILE);
 			proj.writeString(Utils.DEFAULT_PROJ, false);
 		}
 
