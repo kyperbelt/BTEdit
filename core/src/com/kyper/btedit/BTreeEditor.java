@@ -1067,7 +1067,8 @@ public class BTreeEditor extends ApplicationAdapter {
 
 				JsonValue value = reader.parse(data);
 				current = BehaviorNode.fromJson(BTreeEditor.this, value);
-				centerActor(current);
+				centerNode(current);
+				current.layout();
 				resetTreeView();
 				tree_view.addActor(current);
 				busy = false;

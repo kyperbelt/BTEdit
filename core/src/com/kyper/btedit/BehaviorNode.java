@@ -585,7 +585,6 @@ public class BehaviorNode extends Group {
 		if (node_properties != null)
 			n.properties.fromJson(node_properties);
 		n.createProperties();
-		n.showProperties();
 		JsonValue children = json.get("children");
 
 		for (int i = 0; i < children.size; i++) {
