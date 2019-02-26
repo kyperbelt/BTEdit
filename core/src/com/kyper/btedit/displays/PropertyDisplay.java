@@ -12,6 +12,7 @@ import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.command.ChangePropertyCommand;
 import com.kyper.btedit.properties.NodeProperty;
+import com.kyper.btedit.properties.PropertyType;
 import com.kyper.btedit.properties.PropertyEditTable;
 
 /**
@@ -89,7 +90,10 @@ public class PropertyDisplay extends VisWindow {
 			new_value = property.getEditTale().getInputField().getText();
 		}
 		edit.addAndExecuteCommand(new ChangePropertyCommand(edit, property, property.value, new_value));
-		property.getEditTale().getInputField().removeListener(enter_listener);
+		
+		if (!pet.isBoolean())
+			property.getEditTale().getInputField().removeListener(enter_listener);
+
 		close();
 	}
 
@@ -97,13 +101,20 @@ public class PropertyDisplay extends VisWindow {
 		this.property = property;
 		property_table.reset();
 		property.getEditTale().update();
-		property.getEditTale().getInputField().addListener(enter_listener);
+		if (property.type != PropertyType.Bool)
+		{
+			property.getEditTale().getInputField().addListener(enter_listener);
+		}
+
 		property_table.add(property.getEditTale()).growX();
 		edit.centerActor(this);
 		edit.stage.addActor(this);
 
-		edit.stage.setKeyboardFocus(property.getEditTale().getInputField());
-		property.getEditTale().getInputField().selectAll();
+		if (property.type != PropertyType.Bool)
+		{
+			edit.stage.setKeyboardFocus(property.getEditTale().getInputField());
+			property.getEditTale().getInputField().selectAll();
+		}
 	}
 
 }

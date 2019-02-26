@@ -85,6 +85,8 @@ public class PropertyEditTable extends Table{
 			break;
 		case Bool:
 			is_bool = true;
+			checkbox = new VisCheckBox("");
+			checkbox.setChecked(Boolean.parseBoolean(property.value));
 			return null;
 		case String:
 			break;
