@@ -49,9 +49,10 @@ import com.kotcrab.vis.ui.widget.file.FileChooser;
 import com.kotcrab.vis.ui.widget.file.FileChooser.Mode;
 import com.kotcrab.vis.ui.widget.file.FileChooser.SelectionMode;
 import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener;
-import com.kyper.btedit.BehaviorNode.NodeType;
 import com.kyper.btedit.command.CreateNodeCommand;
 import com.kyper.btedit.command.ICommand;
+import com.kyper.btedit.data.Node;
+import com.kyper.btedit.data.NodeType;
 import com.kyper.btedit.displays.PropertyDisplay;
 
 public class BTreeEditor extends ApplicationAdapter {
@@ -513,7 +514,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		// handle project defaults now as well
 		FileHandle proj = Gdx.files.absolute(project_path + "/" + PROJ_FILE);
 		if (!proj.exists()) {
-			proj = Gdx.files.external(project_path + "/" + PROJ_FILE);
+			proj = Gdx.files.absolute(project_path + "/" + PROJ_FILE);
 			proj.writeString(Utils.DEFAULT_PROJ, false);
 		}
 
@@ -869,10 +870,10 @@ public class BTreeEditor extends ApplicationAdapter {
 		Gdx.app.log("createNewProject", "start " + name);
 		resetTreeView();
 		centerNode(root);
-		NodeTemplate template = getTemplate(root.getNodeName(), root.type);
+		NodeTemplate template = getTemplate(root.getNodeName(), root.getNode().getNodeType());
 		if (template != null) {
 			Gdx.app.log("createNewProject", "template = " + template);
-			template.properitize(root);
+			template.properitize(root.getNode());
 			root.createProperties();
 			root.layout();
 		}
@@ -905,8 +906,10 @@ public class BTreeEditor extends ApplicationAdapter {
 		if (m_defaultRootTemplate != null) {
 			String nodetype = nodetype_sel.getSelected();
 			String name = node_sel.getSelected();
-			BehaviorNode node = new BehaviorNode(BTreeEditor.this, m_defaultRootTemplate.getNodeType(),
-					m_defaultRootTemplate.getNodeName());
+			Node newNode = new Node();
+			newNode.setNodeType(NodeType.valueOf(nodetype.toUpperCase()));
+			newNode.setName(name);
+			BehaviorNode node = new BehaviorNode(BTreeEditor.this, newNode);
 			createNewProject(DEFAULT_NAME, node);
 			node.updateArrows();
 			busy = false;
@@ -921,8 +924,10 @@ public class BTreeEditor extends ApplicationAdapter {
 				public void clicked(InputEvent event, float x, float y) {
 					String nodetype = nodetype_sel.getSelected();
 					String name = node_sel.getSelected();
-					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()),
-							name);
+					Node newNode = new Node();
+					newNode.setNodeType(NodeType.valueOf(nodetype));
+					newNode.setName(name);
+					BehaviorNode node = new BehaviorNode(BTreeEditor.this, newNode);
 					createNewProject(DEFAULT_NAME, node);
 					node.updateArrows();
 					node_chooser.fadeOut();
@@ -935,8 +940,10 @@ public class BTreeEditor extends ApplicationAdapter {
 				public void clicked(InputEvent event, float x, float y) {
 					String nodetype = nodetype_sel.getSelected();
 					String name = node_sel.getSelected();
-					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()),
-							name);
+					Node newNode = new Node();
+					newNode.setNodeType(NodeType.valueOf(nodetype.toUpperCase()));
+					newNode.setName(name);
+					BehaviorNode node = new BehaviorNode(BTreeEditor.this, newNode);
 					createNewProject(DEFAULT_NAME, node);
 					node.updateArrows();
 					node_chooser.fadeOut();
@@ -977,10 +984,14 @@ public class BTreeEditor extends ApplicationAdapter {
 			public void clicked(InputEvent event, float x, float y) {
 				String nodetype = nodetype_sel.getSelected();
 				String name = node_sel.getSelected();
-				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+				Node newNode = new Node();
+				newNode.setNodeType(NodeType.valueOf(nodetype));
+				newNode.setName(name);
+				
+				BehaviorNode node = new BehaviorNode(BTreeEditor.this, newNode);
 				NodeTemplate template = getTemplate(name, NodeType.valueOf(nodetype.toUpperCase()));
 				if (template != null) {
-					template.properitize(node);
+					template.properitize(newNode);
 					node.createProperties();
 				}
 				if (parent != null) {
@@ -998,10 +1009,13 @@ public class BTreeEditor extends ApplicationAdapter {
 			public void clicked(InputEvent event, float x, float y) {
 				String nodetype = nodetype_sel.getSelected();
 				String name = node_sel.getSelected();
-				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+				Node newNode = new Node();
+				newNode.setNodeType(NodeType.valueOf(nodetype));
+				newNode.setName(name);
+				BehaviorNode node = new BehaviorNode(BTreeEditor.this,newNode);
 				NodeTemplate template = getTemplate(name, NodeType.valueOf(nodetype.toUpperCase()));
 				if (template != null) {
-					template.properitize(node);
+					template.properitize(newNode);
 					node.createProperties();
 				}
 

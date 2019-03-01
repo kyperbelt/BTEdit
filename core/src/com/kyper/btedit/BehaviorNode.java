@@ -22,6 +22,8 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kyper.btedit.Assets.Textures;
 import com.kyper.btedit.command.MoveNodeCommand;
 import com.kyper.btedit.command.RemoveNodeCommand;
+import com.kyper.btedit.data.Node;
+import com.kyper.btedit.data.NodeType;
 import com.kyper.btedit.properties.NodeProperties;
 import com.kyper.btedit.properties.NodeProperty;
 
@@ -37,13 +39,6 @@ public class BehaviorNode extends Group {
 	public static int NWIDTH = 200;
 	public static int NHEIGHT = 100;
 
-	public static enum NodeType {
-		SUPPLEMENT, COMPOSITE, LEAF
-	}
-
-	String nodename;
-	public NodeType type;
-
 	public Table node_table;
 	Table header;
 	VisLabel name_label;
@@ -55,6 +50,8 @@ public class BehaviorNode extends Group {
 	ImageButton down;
 	Table property_table;
 	Table property_container;
+	
+	Node node;
 	
 	private static Vector2 node1,node2,center;
 	
@@ -75,8 +72,6 @@ public class BehaviorNode extends Group {
 
 	private ClickListener listener;
 
-	public NodeProperties properties;
-
 	BTreeEditor editor;
 
 	protected BehaviorNode parent;
@@ -92,12 +87,10 @@ public class BehaviorNode extends Group {
 
 	boolean p_check = false;
 
-	public BehaviorNode(final BTreeEditor editor, NodeType type, String name) {
+	public BehaviorNode(final BTreeEditor editor, Node node) {
 		setTransform(true);
-		properties = new NodeProperties();
-		this.nodename = name;
+		this.node = node;
 		this.editor = editor;
-		this.type = type;
 		setSize(NWIDTH, NHEIGHT);
 		children = new Array<BehaviorNode>();
 
@@ -190,7 +183,7 @@ public class BehaviorNode extends Group {
 
 		node_table.add(header).height(28).pad(0).align(Align.topLeft).growX().row();
 
-		name_label = new VisLabel(nodename);
+		name_label = new VisLabel(node.getName());
 		name_label.setColor(H_COLOR);
 		name_label.setTouchable(Touchable.disabled);
 		header.add(name_label);
@@ -258,7 +251,7 @@ public class BehaviorNode extends Group {
 	}
 
 	public void createProperties() {
-		Array<NodeProperty> nps = properties.getProperties();
+		Array<NodeProperty> nps = node.getNodeProperties().getProperties();
 		for (int i = 0; i < nps.size; i++) {
 			Table p = nps.get(i).getPropertyTable(editor);
 			property_container.add(p).growX().align(Align.center).row();
@@ -308,7 +301,7 @@ public class BehaviorNode extends Group {
 	}
 
 	public String getNodeName() {
-		return nodename;
+		return node.getName();
 	}
 
 	public int getChildrenCount() {
@@ -324,7 +317,7 @@ public class BehaviorNode extends Group {
 		node.layout();
 		layout();
 		children.add(node);
-		if (type == NodeType.SUPPLEMENT)
+		if (this.node.getNodeType() == NodeType.SUPPLEMENT)
 			add.setVisible(false);
 
 		// As a node was added to this parent, update all children's arrows
@@ -345,7 +338,7 @@ public class BehaviorNode extends Group {
 			node.layout();
 			layout();
 			children.insert(index, node);
-			if (type == NodeType.SUPPLEMENT)
+			if (this.node.getNodeType() == NodeType.SUPPLEMENT)
 				add.setVisible(false);
 
 			// As a node was added to this parent, update all children's arrows
@@ -407,7 +400,7 @@ public class BehaviorNode extends Group {
 		children.removeValue(node, true);
 		node.remove();
 		getRoot().layout();
-		if (type == NodeType.SUPPLEMENT)
+		if (this.node.getNodeType() == NodeType.SUPPLEMENT)
 			add.setVisible(true);
 		editor.setDirty();
 
@@ -529,6 +522,10 @@ public class BehaviorNode extends Group {
 		else
 			return this;
 	}
+	
+	public Node getNode() {
+		return node;
+	}
 
 	private void centerNodeTable() {
 		node_table.setPosition(getWidth() * .5f - (node_table.getWidth() * .5f),
@@ -547,8 +544,8 @@ public class BehaviorNode extends Group {
 	}
 
 	public String getJson(int indent) {
-		String json = Utils.tab(indent) + "\"" + nodename + "\" :" + "{\n";
-		json += properties.toJson(indent + 1) + ",\n";
+		String json = Utils.tab(indent) + "\"" + getNodeName() + "\" :" + "{\n";
+		json += node.getNodeProperties().toJson(indent + 1) + ",\n";
 		json += Utils.tab(indent + 1) + "\"children\" : [";
 		for (int i = 0; i < children.size; i++) {
 
@@ -579,11 +576,15 @@ public class BehaviorNode extends Group {
 		} else {
 			throw new IllegalArgumentException("Unable to create Node:[" + name + "] ");
 		}
+		
+		Node node = new Node();
+		node.setName(name);
+		node.setNodeType(type);
 
-		n = new BehaviorNode(editor, type, name);
+		n = new BehaviorNode(editor, node);
 		JsonValue node_properties = json.get("properties");
 		if (node_properties != null)
-			n.properties.fromJson(node_properties);
+			node.getNodeProperties().fromJson(node_properties);
 		n.createProperties();
 		JsonValue children = json.get("children");
 
@@ -598,9 +599,9 @@ public class BehaviorNode extends Group {
 	}
 	
 	public BehaviorNode getCopy() {
-		BehaviorNode copy = new BehaviorNode(editor, type, nodename);
-		copy.properties.makeCopyOf(properties);
-		
+		BehaviorNode copy = new BehaviorNode(editor, node);
+		copy.node.getNodeProperties().makeCopyOf(node.getNodeProperties());
+
 		for (int i = 0; i < children.size; i++) {
 			BehaviorNode c = children.get(i).getCopy();
 			copy.addNode(c);
@@ -610,7 +611,7 @@ public class BehaviorNode extends Group {
 	}
 
 	private Texture getTexture() {
-		switch (type) {
+		switch (node.getNodeType()) {
 		case COMPOSITE:
 			return Assets.Textures.BLUE;
 		case SUPPLEMENT:

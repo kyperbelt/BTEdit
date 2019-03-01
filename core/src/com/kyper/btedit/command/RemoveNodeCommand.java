@@ -2,6 +2,7 @@ package com.kyper.btedit.command;
 
 import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.BehaviorNode;
+import com.kyper.btedit.data.NodeType;
 
 public class RemoveNodeCommand implements ICommand {
 
@@ -23,7 +24,7 @@ public class RemoveNodeCommand implements ICommand {
 		index = node.getIndex();
 		if (parent != null) {
 			editor.setSelectedNode(null);
-			if (node.type == BehaviorNode.NodeType.SUPPLEMENT) {
+			if (node.getNode().getNodeType() == NodeType.SUPPLEMENT) {
 				if (node.getChildrenCount() > 0) {
 					// remove child from this node, then remove the node
 					child = node.getFirstChild();

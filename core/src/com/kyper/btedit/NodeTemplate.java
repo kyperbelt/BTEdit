@@ -1,7 +1,8 @@
 package com.kyper.btedit;
 
 import com.badlogic.gdx.utils.Array;
-import com.kyper.btedit.BehaviorNode.NodeType;
+import com.kyper.btedit.data.Node;
+import com.kyper.btedit.data.NodeType;
 import com.kyper.btedit.properties.NodeProperties;
 import com.kyper.btedit.properties.NodeProperty;
 
@@ -45,13 +46,13 @@ public class NodeTemplate {
 		return isDefault;
 	}
 	
-	public void properitize(BehaviorNode node) {
+	public void properitize(Node node) {
 		Array<NodeProperty> ps = this.properties.getProperties();
 		for (int i = 0; i < ps.size; i++) {
 			NodeProperty p = ps.get(i);
 			NodeProperty np = new NodeProperty(p.name, p.type,p.value);
-			node.properties.addPropety(np);
-			System.out.println("added property:"+np.name);
+			node.getNodeProperties().addPropety(np);
+			System.out.println(String.format("added property [%s] to Node->%s", np.name,node.getName()));
 		}
 	}
 	
