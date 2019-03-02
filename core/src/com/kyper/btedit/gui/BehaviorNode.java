@@ -1,4 +1,4 @@
-package com.kyper.btedit;
+package com.kyper.btedit.gui;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
@@ -19,13 +19,18 @@ import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;
 import com.kotcrab.vis.ui.widget.VisLabel;
+import com.kyper.btedit.Assets;
+import com.kyper.btedit.BTreeEditor;
+import com.kyper.btedit.Utils;
+import com.kyper.btedit.Assets.Styles;
 import com.kyper.btedit.Assets.Textures;
 import com.kyper.btedit.command.MoveNodeCommand;
 import com.kyper.btedit.command.RemoveNodeCommand;
 import com.kyper.btedit.data.Node;
+import com.kyper.btedit.data.NodeTemplate;
 import com.kyper.btedit.data.NodeType;
-import com.kyper.btedit.properties.NodeProperties;
-import com.kyper.btedit.properties.NodeProperty;
+import com.kyper.btedit.data.properties.NodeProperties;
+import com.kyper.btedit.data.properties.NodeProperty;
 
 public class BehaviorNode extends Group {
 
@@ -74,7 +79,7 @@ public class BehaviorNode extends Group {
 
 	BTreeEditor editor;
 
-	protected BehaviorNode parent;
+	public BehaviorNode parent;
 	protected Array<BehaviorNode> children;
 
 	Action layout_action = new Action() {

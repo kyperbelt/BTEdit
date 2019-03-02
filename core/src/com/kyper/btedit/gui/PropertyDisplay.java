@@ -1,6 +1,5 @@
-package com.kyper.btedit.displays;
+package com.kyper.btedit.gui;
 
-import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.Input.Keys;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.InputListener;
@@ -11,9 +10,8 @@ import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.command.ChangePropertyCommand;
-import com.kyper.btedit.properties.NodeProperty;
-import com.kyper.btedit.properties.PropertyType;
-import com.kyper.btedit.properties.PropertyEditTable;
+import com.kyper.btedit.data.properties.NodeProperty;
+import com.kyper.btedit.data.properties.PropertyType;
 
 /**
  * this will be used to display the property name and an editable field.

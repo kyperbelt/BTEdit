@@ -1,8 +1,8 @@
 package com.kyper.btedit.command;
 
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.BehaviorNode;
 import com.kyper.btedit.data.NodeType;
+import com.kyper.btedit.gui.BehaviorNode;
 
 public class RemoveNodeCommand implements ICommand {
 

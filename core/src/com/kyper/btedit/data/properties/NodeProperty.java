@@ -1,4 +1,4 @@
-package com.kyper.btedit.properties;
+package com.kyper.btedit.data.properties;
 
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.ImageButton;
@@ -8,8 +8,9 @@ import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kyper.btedit.Assets;
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.BehaviorNode;
 import com.kyper.btedit.Utils;
+import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.PropertyEditTable;
 
 public class NodeProperty {
 	public String name;

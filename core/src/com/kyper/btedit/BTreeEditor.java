@@ -52,8 +52,11 @@ import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener;
 import com.kyper.btedit.command.CreateNodeCommand;
 import com.kyper.btedit.command.ICommand;
 import com.kyper.btedit.data.Node;
+import com.kyper.btedit.data.NodeTemplate;
 import com.kyper.btedit.data.NodeType;
-import com.kyper.btedit.displays.PropertyDisplay;
+import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.GroupCamera;
+import com.kyper.btedit.gui.PropertyDisplay;
 
 public class BTreeEditor extends ApplicationAdapter {
 

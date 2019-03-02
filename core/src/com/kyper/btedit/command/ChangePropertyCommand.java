@@ -4,8 +4,8 @@ import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.kotcrab.vis.ui.widget.VisCheckBox;
 import com.kotcrab.vis.ui.widget.VisTextField;
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.properties.NodeProperty;
-import com.kyper.btedit.properties.PropertyType;
+import com.kyper.btedit.data.properties.NodeProperty;
+import com.kyper.btedit.data.properties.PropertyType;
 
 public class ChangePropertyCommand implements ICommand{
 

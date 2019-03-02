@@ -6,7 +6,7 @@ package com.kyper.btedit.data;
  * @author john
  *
  */
-public class Tree {
+public class NodeTree {
 	
 	Node root;
 	

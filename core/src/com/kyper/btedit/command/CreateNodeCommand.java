@@ -2,7 +2,7 @@ package com.kyper.btedit.command;
 
 import com.badlogic.gdx.Gdx;
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.BehaviorNode;
+import com.kyper.btedit.gui.BehaviorNode;
 
 public class CreateNodeCommand implements ICommand {
 

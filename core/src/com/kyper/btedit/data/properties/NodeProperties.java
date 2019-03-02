@@ -1,4 +1,4 @@
-package com.kyper.btedit.properties;
+package com.kyper.btedit.data.properties;
 
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonValue;

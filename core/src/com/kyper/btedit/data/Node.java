@@ -1,7 +1,7 @@
 package com.kyper.btedit.data;
 
 import com.badlogic.gdx.utils.Array;
-import com.kyper.btedit.properties.NodeProperties;
+import com.kyper.btedit.data.properties.NodeProperties;
 
 /**
  * node data
@@ -10,7 +10,7 @@ import com.kyper.btedit.properties.NodeProperties;
  */
 public class Node {
 	
-	Tree tree;
+	NodeTree tree;
 	
 	String nodename;
 	NodeType type;
@@ -26,11 +26,11 @@ public class Node {
 		properties = new NodeProperties();
 	}
 	
-	public void setTree(Tree tree) {
+	public void setTree(NodeTree tree) {
 		this.tree = tree;
 	}
 	
-	public Tree getTree() {
+	public NodeTree getTree() {
 		return tree;
 	}
 	

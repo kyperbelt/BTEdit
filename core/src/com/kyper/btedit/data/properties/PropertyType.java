@@ -1,4 +1,4 @@
-package com.kyper.btedit.properties;
+package com.kyper.btedit.data.properties;
 
 /**
  * these are the types of properties we can assign to nodes. They are enums with

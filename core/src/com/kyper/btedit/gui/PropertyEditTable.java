@@ -1,4 +1,4 @@
-package com.kyper.btedit.properties;
+package com.kyper.btedit.gui;
 
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.utils.Align;
@@ -7,6 +7,7 @@ import com.kotcrab.vis.ui.util.IntDigitsOnlyFilter;
 import com.kotcrab.vis.ui.widget.VisCheckBox;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextField;
+import com.kyper.btedit.data.properties.NodeProperty;
 
 public class PropertyEditTable extends Table{
 	
