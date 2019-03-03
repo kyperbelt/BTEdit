@@ -63,33 +63,6 @@ public class BTreeEditor extends ApplicationAdapter {
 	private SpriteBatch batch;
 	private Sprite background;
 
-	public static final int WIDTH = 1280;
-	public static final int HEIGHT = 720;
-	public static final boolean DEBUG = false;
-
-	public static String VERSION = "0.1";
-	public static String TITLE = "BT Edit v" + VERSION;
-	public static String DEFAULT_NAME = "Untitled";
-	public static String DEFAULT_PATH = "";
-	public static String PREF_NAME = "BTreeEditor_Config";
-	public static String EXTENSION = "btree";
-	final static String PERIOD = ".";
-	final static String FORWARD_DASH = "/";
-	final static String BACK_DASH = "\\";
-
-	public final static int UNDO_KEY = Keys.Z;
-	public final static int REDO_KEY = Keys.Y;
-	public final static int CUT_KEY = Keys.X;
-	public final static int COPY_KEY = Keys.C;
-	public final static int PASTE_KEY = Keys.V;
-
-	static final String LAST_SAVE_PATH = "last_save_path";
-	static final String RECENT_PROJECT = "recent_project_path";
-	static final String PROJECT_PATH = "project_path";
-	static final String NODES_FILE = "nodes_file";
-	static final String DEFAULT_NODES_FILE = "default.nodes";
-	static final String PROJ_FILE = "btree.proj";
-
 	final static int CLOSE = 0;
 	final static int OPEN = 1;
 	final static int CREATE = 2;
@@ -236,7 +209,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		project_path = prefs.getString(PROJECT_PATH);
 
 		stage = new Stage(new ScreenViewport());
-		stage.setDebugAll(DEBUG);
+		stage.setDebugAll(BTConfig.DEBUG);
 
 		InputAdapter input = new InputAdapter() {
 			public boolean scrolled(int amount) {
