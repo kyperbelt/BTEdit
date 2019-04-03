@@ -62,34 +62,28 @@ public class NodeProperties {
 		}
 	}
 
+	
+	
+	//DEPRECATED--
 	/**
 	 * get the properties in json format proper
 	 * 
 	 * @param indent
 	 * @return
 	 */
-	public String toJson(int indent) {
-		String json = Utils.tab(indent) + "\"properties\"" + " : {" + (properties.size == 0 ? "" : "\n");
-		for (int i = 0; i < properties.size; i++) {
-			NodeProperty p = properties.get(i);
-			json += p.getJson(indent + 1) + (i == properties.size - 1 ? "" : ",") + "\n";
-		}
+//	public String toJson(int indent) {
+//		String json = Utils.tab(indent) + "\"properties\"" + " : {" + (properties.size == 0 ? "" : "\n");
+//		for (int i = 0; i < properties.size; i++) {
+//			NodeProperty p = properties.get(i);
+//			json += p.getJson(indent + 1) + (i == properties.size - 1 ? "" : ",") + "\n";
+//		}
+//
+//		json += (properties.size == 0 ? "" : Utils.tab(indent)) + "}";
+//
+//		return json;
+//	}
 
-		json += (properties.size == 0 ? "" : Utils.tab(indent)) + "}";
-
-		return json;
-	}
-
-	public NodeProperties fromJson(JsonValue json) {
-		for (int j = 0; j < json.size; j++) {
-			JsonValue pv = json.get(j);
-			NodeProperty property = new NodeProperty(pv.name,
-					PropertyType.getTypeByName(pv.get("type") != null ? pv.getString("type") : ""),
-					pv.get("value") != null ? pv.get("value").asString() : null);
-			addPropety(property);
-		}
-		return this;
-	}
+	
 
 
 }

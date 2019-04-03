@@ -2,13 +2,13 @@ package com.kyper.btedit.command;
 
 import com.badlogic.gdx.Gdx;
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.NodeRepresentation;
 
 public class CreateNodeCommand implements ICommand {
 
 	private BTreeEditor editor;
-	private BehaviorNode node;
-	private BehaviorNode parent;
+	private NodeRepresentation node;
+	private NodeRepresentation parent;
 	private int index;
 
 	/**
@@ -25,7 +25,7 @@ public class CreateNodeCommand implements ICommand {
 	 *            - the index in which to place the node relative to the parent (-1)
 	 *            just means ad
 	 */
-	public CreateNodeCommand(BTreeEditor editor, BehaviorNode node, BehaviorNode parent, int index) {
+	public CreateNodeCommand(BTreeEditor editor, NodeRepresentation node, NodeRepresentation parent, int index) {
 		this.editor = editor;
 		this.node = node;
 		this.parent = parent;

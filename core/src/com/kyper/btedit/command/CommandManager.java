@@ -12,10 +12,27 @@ import com.badlogic.gdx.utils.Array;
  */
 public class CommandManager {
 
+	//current command index
+	private int current = 0;
+	
 	Array<ICommand> commands;
 
 	public CommandManager() {
 		commands = new Array<ICommand>();
+	}
+	
+	public boolean execute(ICommand command) {
+		//TODO: add command to command list and then execute it
+		
+		
+		return false;
+	}
+	
+	public boolean undo() {
+		
+		//TODO: undo last command on top of the list and then move back and index
+		
+		return false;
 	}
 
 }

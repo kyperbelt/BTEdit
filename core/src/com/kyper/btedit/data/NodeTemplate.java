@@ -4,6 +4,7 @@ import com.badlogic.gdx.utils.Array;
 import com.kyper.btedit.Utils;
 import com.kyper.btedit.data.properties.NodeProperties;
 import com.kyper.btedit.data.properties.NodeProperty;
+import com.kyper.btedit.formats.JsonFormater;
 
 public class NodeTemplate {
 	
@@ -57,7 +58,7 @@ public class NodeTemplate {
 	
 	public String getJson(int indent) {
 		String json = String.format(Utils.tab(indent)+"\"%s\":{\n",name);
-		json+=properties.toJson(indent+1);
+		json+=JsonFormater.propertiesToJson(properties,indent+1);
 		json+=Utils.tab(indent)+"}\n";
 		return json;
 	}

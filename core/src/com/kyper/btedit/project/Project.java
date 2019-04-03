@@ -12,9 +12,11 @@ import com.kyper.btedit.data.NodeTree;
 public class Project {
 	
 	NodeTree tree;
+	
 	String name;
 	String path;
 	CommandManager commandManager;
+	boolean dirty;
 	
 	
 	public Project(NodeTree tree,String name,String path) {
@@ -37,6 +39,14 @@ public class Project {
 	
 	public String getPath() {
 		return path;
+	}
+	
+	public boolean isDirty() {
+		return this.dirty;
+	}
+	
+	public void setDirty(boolean dirty) {
+		this.dirty = dirty;
 	}
 	
 	public CommandManager getCommandManager() {

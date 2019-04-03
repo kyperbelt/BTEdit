@@ -1,14 +1,14 @@
 package com.kyper.btedit.command;
 
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.NodeRepresentation;
 
 public class CopyNodeCommand implements ICommand{
 
 	BTreeEditor edit;
-	BehaviorNode node;
+	NodeRepresentation node;
 	
-	public CopyNodeCommand(BTreeEditor edit,BehaviorNode node) {
+	public CopyNodeCommand(BTreeEditor edit,NodeRepresentation node) {
 		this.edit = edit;
 		this.node = node;
 	}

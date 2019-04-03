@@ -9,7 +9,7 @@ import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kyper.btedit.Assets;
 import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.Utils;
-import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.NodeRepresentation;
 import com.kyper.btedit.gui.PropertyEditTable;
 
 public class NodeProperty {
@@ -68,7 +68,7 @@ public class NodeProperty {
 		pt.setHeight(24);
 
 		VisLabel namel = new VisLabel(name);
-		namel.setColor(BehaviorNode.H_COLOR);
+		namel.setColor(NodeRepresentation.H_COLOR);
 		namel.setFontScale(.9f);
 		namel.setWidth(70);
 		namel.setAlignment(Align.left);
@@ -76,7 +76,7 @@ public class NodeProperty {
 		namel.setEllipsis("...");
 		
 		value_label = new VisLabel(value);
-		value_label.setColor(BehaviorNode.H_COLOR);
+		value_label.setColor(NodeRepresentation.H_COLOR);
 		value_label.setFontScale(.9f);
 		value_label.setAlignment(Align.right);
 		value_label.setEllipsis(true);

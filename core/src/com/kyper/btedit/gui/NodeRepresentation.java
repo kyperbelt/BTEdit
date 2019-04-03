@@ -17,22 +17,21 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
-import com.badlogic.gdx.utils.JsonValue;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kyper.btedit.Assets;
-import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.Utils;
-import com.kyper.btedit.Assets.Styles;
 import com.kyper.btedit.Assets.Textures;
-import com.kyper.btedit.command.MoveNodeCommand;
-import com.kyper.btedit.command.RemoveNodeCommand;
+import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.data.Node;
-import com.kyper.btedit.data.NodeTemplate;
 import com.kyper.btedit.data.NodeType;
-import com.kyper.btedit.data.properties.NodeProperties;
 import com.kyper.btedit.data.properties.NodeProperty;
+import com.kyper.btedit.events.NodeChangeEvent;
 
-public class BehaviorNode extends Group {
+/**
+ * A representation of the behavior tree nodes that is shown in the editor.
+ * @author john
+ *
+ */
+public class NodeRepresentation extends Group {
 
 	private static final float WIDTH = 200;
 	private static final float HEIGHT = 120;
@@ -79,8 +78,8 @@ public class BehaviorNode extends Group {
 
 	BTreeEditor editor;
 
-	public BehaviorNode parent;
-	protected Array<BehaviorNode> children;
+	public NodeRepresentation parent;
+	protected Array<NodeRepresentation> children;
 
 	Action layout_action = new Action() {
 		@Override
@@ -92,12 +91,12 @@ public class BehaviorNode extends Group {
 
 	boolean p_check = false;
 
-	public BehaviorNode(final BTreeEditor editor, Node node) {
+	public NodeRepresentation(final BTreeEditor editor, Node node) {
 		setTransform(true);
 		this.node = node;
 		this.editor = editor;
 		setSize(NWIDTH, NHEIGHT);
-		children = new Array<BehaviorNode>();
+		children = new Array<NodeRepresentation>();
 
 		listener = new ClickListener() {
 			@Override
@@ -106,21 +105,21 @@ public class BehaviorNode extends Group {
 				selectThisNode();
 
 				if (a == add) {
-					editor.createNewNode(BehaviorNode.this);
+					//editor.createNewNode(NodeRepresentation.this);
 				}
 
 				if (a == remove) {
 					if (parent != null) {
-						editor.addAndExecuteCommand(new RemoveNodeCommand(editor, BehaviorNode.this, parent));
+						//editor.addAndExecuteCommand(new RemoveNodeCommand(editor, NodeRepresentation.this, parent));
 					}
 				}
 
 				if (a == left) {
-					editor.addAndExecuteCommand(new MoveNodeCommand(editor, BehaviorNode.this, parent, true));
+					//editor.addAndExecuteCommand(new MoveNodeCommand(editor, NodeRepresentation.this, parent, true));
 				}
 
 				if (a == right) {
-					editor.addAndExecuteCommand(new MoveNodeCommand(editor, BehaviorNode.this, parent, false));
+					//editor.addAndExecuteCommand(new MoveNodeCommand(editor, NodeRepresentation.this, parent, false));
 				}
 
 				if (a == down) {
@@ -142,7 +141,7 @@ public class BehaviorNode extends Group {
 	public void draw(Batch batch, float parentAlpha) {
 		float width = 16;
 		for (int i = 0; i < children.size; i++) {
-			BehaviorNode n = children.get(i);
+			NodeRepresentation n = children.get(i);
 			Table nt = n.node_table;
 			
 			node1.set(node_table.getX()+node_table.getWidth()*.5f,node_table.getY()+node_table.getHeight()*.5f);
@@ -158,12 +157,12 @@ public class BehaviorNode extends Group {
 		super.draw(batch, parentAlpha);
 	}
 
-	protected void setNodeParent(BehaviorNode parent) {
+	protected void setNodeParent(NodeRepresentation parent) {
 		this.parent = parent;
 	}
 	
 	public void selectThisNode() {
-		editor.setSelectedNode(BehaviorNode.this);
+		//editor.setSelectedNode(NodeRepresentation.this);
 	}
 
 	private void createNodeTable() {
@@ -313,11 +312,11 @@ public class BehaviorNode extends Group {
 		return children.size;
 	}
 
-	public BehaviorNode getFirstChild() {
+	public NodeRepresentation getFirstChild() {
 		return children.get(0);
 	}
 
-	public void addNode(BehaviorNode node) {
+	public void addNode(NodeRepresentation node) {
 		node.parent = this;
 		node.layout();
 		layout();
@@ -330,14 +329,14 @@ public class BehaviorNode extends Group {
 		updateArrows();
 		updateArrowsOnChildren();
 
-		editor.setDirty();
+		editor.getEventManager().queue(new NodeChangeEvent(node, node.node, NodeChangeEvent.NODE_ADDED));;
 
 		getRoot().layout();
 		
 		
 	}
 
-	public void addNode(BehaviorNode node, int index) {
+	public void addNode(NodeRepresentation node, int index) {
 		if (index != -1) {
 			node.parent = this;
 			node.layout();
@@ -351,7 +350,7 @@ public class BehaviorNode extends Group {
 			updateArrows();
 			updateArrowsOnChildren();
 
-			editor.setDirty();
+			editor.getEventManager().queue(new NodeChangeEvent(node, node.node, NodeChangeEvent.NODE_ADDED));;
 
 			getRoot().layout();
 		} else {
@@ -374,7 +373,7 @@ public class BehaviorNode extends Group {
 
 	public void updateArrowsOnChildren() {
 		for (int i = 0; i < children.size; i++) {
-			if (children.get(i) instanceof BehaviorNode)
+			if (children.get(i) instanceof NodeRepresentation)
 				children.get(i).updateArrows();
 		}
 	}
@@ -400,14 +399,14 @@ public class BehaviorNode extends Group {
 
 	}
 
-	public void removeNode(BehaviorNode node) {
+	public void removeNode(NodeRepresentation node) {
 
 		children.removeValue(node, true);
 		node.remove();
 		getRoot().layout();
 		if (this.node.getNodeType() == NodeType.SUPPLEMENT)
 			add.setVisible(true);
-		editor.setDirty();
+		editor.getEventManager().queue(new NodeChangeEvent(node, node.node, NodeChangeEvent.NODE_DELETED));;
 
 		// As a node was removed from this parent, update all children's arrows
 		// to reflect new possible moves.
@@ -415,7 +414,7 @@ public class BehaviorNode extends Group {
 
 	}
 
-	public void removeNodeLeaveChild(BehaviorNode node) {
+	public void removeNodeLeaveChild(NodeRepresentation node) {
 		// children.
 	}
 
@@ -423,7 +422,7 @@ public class BehaviorNode extends Group {
 		return parent != null ? parent.children.indexOf(this, true) : -1;
 	}
 
-	private int arrayNumber(BehaviorNode node) {
+	private int arrayNumber(NodeRepresentation node) {
 		for (int i = 0; i < children.size; i++) {
 			if (node == children.get(i))
 				return i;
@@ -432,27 +431,27 @@ public class BehaviorNode extends Group {
 		return -1;
 	}
 
-	public void moveLeft(BehaviorNode node) {
+	public void moveLeft(NodeRepresentation node) {
 		int pos = arrayNumber(node);
 		if (pos < 0)
 			return;
 
 		int newPos = pos - 1;
 		children.swap(newPos, pos);
-		editor.setDirty();
+		editor.getEventManager().queue(new NodeChangeEvent(node, node.node, NodeChangeEvent.NODE_MOVED));
 		layout();
 		updateArrows();
 		updateArrowsOnChildren();
 	}
 
-	public void moveRight(BehaviorNode node) {
+	public void moveRight(NodeRepresentation node) {
 		int pos = arrayNumber(node);
 		if (pos < 0)
 			return;
 
 		int newPos = pos + 1;
 		children.swap(newPos, pos);
-		editor.setDirty();
+		editor.getEventManager().queue(new NodeChangeEvent(node, node.node, NodeChangeEvent.NODE_MOVED));
 		layout();
 		updateArrows();
 		updateArrowsOnChildren();
@@ -482,7 +481,7 @@ public class BehaviorNode extends Group {
 		// get max height and width
 		float nodes_height = 0;
 		for (int i = 0; i < children.size; i++) {
-			BehaviorNode n = children.get(i);
+			NodeRepresentation n = children.get(i);
 			if(child_pass)
 				n.layout();
 			w += n.getWidth();
@@ -504,7 +503,7 @@ public class BehaviorNode extends Group {
 			// organize child nodes
 			float last_x = 0;
 			for (int i = 0; i < children.size; i++) {
-				BehaviorNode n = children.get(i);
+				NodeRepresentation n = children.get(i);
 				n.setPosition(last_x, (node_table.getY()));
 				n.setAnchorPos(n.getX(), n.getY());
 				last_x += n.getWidth();
@@ -517,11 +516,11 @@ public class BehaviorNode extends Group {
 			setPosition(getX(), anchor_y - getHeight());
 		}
 		
-		editor.centerNode(getRoot());
+		//editor.centerNode(getRoot());
 
 	}
 
-	public BehaviorNode getRoot() {
+	public NodeRepresentation getRoot() {
 		if (parent != null)
 			return parent.getRoot();
 		else
@@ -548,72 +547,7 @@ public class BehaviorNode extends Group {
 		super.act(delta);
 	}
 
-	public String getJson(int indent) {
-		String json = Utils.tab(indent) + "\"" + getNodeName() + "\" :" + "{\n";
-		json += node.getNodeProperties().toJson(indent + 1) + ",\n";
-		json += Utils.tab(indent + 1) + "\"children\" : [";
-		for (int i = 0; i < children.size; i++) {
 
-			json += "\n{" + children.get(i).getJson(indent + 2);
-			if (i + 1 < children.size)
-				json += "},\n";
-			else
-				json += "}\n";
-		}
-		json += children.size == 0 ? "]\n" : Utils.tab(indent + 1) + "]\n";
-		json += Utils.tab(indent) + "}";
-		return json;
-	}
-
-	public static BehaviorNode fromJson(BTreeEditor editor, JsonValue json) {
-		BehaviorNode n = null;
-		String name = json.name();
-		if (name == null || name.isEmpty())
-			json = json.get(0);
-		name = json.name();
-		NodeType type = null;
-		if (NodeTemplate.templatesContainNodeName(editor.composite_nodes, name))
-			type = NodeType.COMPOSITE;
-		else if (NodeTemplate.templatesContainNodeName(editor.supplement_nodes, name))
-			type = NodeType.SUPPLEMENT;
-		else if (NodeTemplate.templatesContainNodeName(editor.leaf_nodes, name)) {
-			type = NodeType.LEAF;
-		} else {
-			throw new IllegalArgumentException("Unable to create Node:[" + name + "] ");
-		}
-		
-		Node node = new Node();
-		node.setName(name);
-		node.setNodeType(type);
-
-		n = new BehaviorNode(editor, node);
-		JsonValue node_properties = json.get("properties");
-		if (node_properties != null)
-			node.getNodeProperties().fromJson(node_properties);
-		n.createProperties();
-		JsonValue children = json.get("children");
-
-		for (int i = 0; i < children.size; i++) {
-			JsonValue v = children.get(i);
-			BehaviorNode child = BehaviorNode.fromJson(editor, v);
-			n.addNode(child);
-
-		}
-
-		return n;
-	}
-	
-	public BehaviorNode getCopy() {
-		BehaviorNode copy = new BehaviorNode(editor, node);
-		copy.node.getNodeProperties().makeCopyOf(node.getNodeProperties());
-
-		for (int i = 0; i < children.size; i++) {
-			BehaviorNode c = children.get(i).getCopy();
-			copy.addNode(c);
-		}
-		
-		return copy;
-	}
 
 	private Texture getTexture() {
 		switch (node.getNodeType()) {
@@ -627,5 +561,76 @@ public class BehaviorNode extends Group {
 			return Assets.Textures.RED;
 		}
 	}
+	
+	//DEPRICATED SECTION
+	
+	
+//	public String getJson(int indent) {
+//	String json = Utils.tab(indent) + "\"" + getNodeName() + "\" :" + "{\n";
+//	json += node.getNodeProperties().toJson(indent + 1) + ",\n";
+//	json += Utils.tab(indent + 1) + "\"children\" : [";
+//	for (int i = 0; i < children.size; i++) {
+//
+//		json += "\n{" + children.get(i).getJson(indent + 2);
+//		if (i + 1 < children.size)
+//			json += "},\n";
+//		else
+//			json += "}\n";
+//	}
+//	json += children.size == 0 ? "]\n" : Utils.tab(indent + 1) + "]\n";
+//	json += Utils.tab(indent) + "}";
+//	return json;
+//}
+
+
+//	public static NodeRepresentation fromJson(BTreeEditor editor, JsonValue json) {
+//		NodeRepresentation n = null;
+//		String name = json.name();
+//		if (name == null || name.isEmpty())
+//			json = json.get(0);
+//		name = json.name();
+//		NodeType type = null;
+//		if (NodeTemplate.templatesContainNodeName(editor.composite_nodes, name))
+//			type = NodeType.COMPOSITE;
+//		else if (NodeTemplate.templatesContainNodeName(editor.supplement_nodes, name))
+//			type = NodeType.SUPPLEMENT;
+//		else if (NodeTemplate.templatesContainNodeName(editor.leaf_nodes, name)) {
+//			type = NodeType.LEAF;
+//		} else {
+//			throw new IllegalArgumentException("Unable to create Node:[" + name + "] ");
+//		}
+//		
+//		Node node = new Node();
+//		node.setName(name);
+//		node.setNodeType(type);
+//
+//		n = new NodeRepresentation(editor, node);
+//		JsonValue node_properties = json.get("properties");
+//		if (node_properties != null)
+//			node.getNodeProperties().fromJson(node_properties);
+//		n.createProperties();
+//		JsonValue children = json.get("children");
+//
+//		for (int i = 0; i < children.size; i++) {
+//			JsonValue v = children.get(i);
+//			NodeRepresentation child = NodeRepresentation.fromJson(editor, v);
+//			n.addNode(child);
+//
+//		}
+//
+//		return n;
+//	}
+//	
+//	public NodeRepresentation getCopy() {
+//		NodeRepresentation copy = new NodeRepresentation(editor, node);
+//		copy.node.getNodeProperties().makeCopyOf(node.getNodeProperties());
+//
+//		for (int i = 0; i < children.size; i++) {
+//			NodeRepresentation c = children.get(i).getCopy();
+//			copy.addNode(c);
+//		}
+//		
+//		return copy;
+//	}
 
 }

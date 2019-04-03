@@ -1,15 +1,15 @@
 package com.kyper.btedit.command;
 
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.NodeRepresentation;
 
 public class CutNodeCommand implements ICommand{
 	
 	BTreeEditor edit;
-	BehaviorNode parent;
-	BehaviorNode node;
+	NodeRepresentation parent;
+	NodeRepresentation node;
 	
-	public CutNodeCommand(BTreeEditor edit,BehaviorNode parent,BehaviorNode node) {
+	public CutNodeCommand(BTreeEditor edit,NodeRepresentation parent,NodeRepresentation node) {
 		this.edit = edit;
 		this.parent = parent;
 		this.node = node;

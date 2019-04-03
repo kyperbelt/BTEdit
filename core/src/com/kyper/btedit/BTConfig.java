@@ -11,7 +11,7 @@ public class BTConfig {
 
 	public static final int WIDTH = 1280;
 	public static final int HEIGHT = 720;
-	public static final boolean DEBUG = false;
+	public static final boolean DEBUG = true;
 	
 	public static String VERSION = "0.1";
 	public static String TITLE = "BT Edit v" + VERSION;

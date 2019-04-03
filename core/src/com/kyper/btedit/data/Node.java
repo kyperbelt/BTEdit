@@ -26,6 +26,20 @@ public class Node {
 		properties = new NodeProperties();
 	}
 	
+	public void addNode(Node n) {
+		n.parent = this;
+		children.add(n);
+	}
+	
+	public void addNode(Node n,int index) {
+		if (index != -1) {
+			n.parent = this;
+			children.insert(index, n);
+		} else {
+			addNode(n);
+		}
+	}
+	
 	public void setTree(NodeTree tree) {
 		this.tree = tree;
 	}

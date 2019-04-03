@@ -2,6 +2,7 @@ package com.kyper.btedit.desktop;
 
 import com.badlogic.gdx.backends.lwjgl.LwjglApplication;
 import com.badlogic.gdx.backends.lwjgl.LwjglApplicationConfiguration;
+import com.kyper.btedit.BTConfig;
 import com.kyper.btedit.BTreeEditor;
 
 public class DesktopLauncher {
@@ -11,9 +12,9 @@ public class DesktopLauncher {
 		final BTreeEditor bt = new BTreeEditor();
 		
 		LwjglApplicationConfiguration config = new LwjglApplicationConfiguration();
-		config.width = BTreeEditor.WIDTH;
-		config.height = BTreeEditor.HEIGHT;
-		config.title = BTreeEditor.TITLE;
+		config.width = BTConfig.WIDTH;
+		config.height = BTConfig.HEIGHT;
+		config.title = BTConfig.TITLE;
 		new LwjglApplication(bt, config) {
 			@Override
 			public void exit() {

@@ -1,16 +1,16 @@
 package com.kyper.btedit.command;
 
 import com.kyper.btedit.BTreeEditor;
-import com.kyper.btedit.gui.BehaviorNode;
+import com.kyper.btedit.gui.NodeRepresentation;
 
 public class MoveNodeCommand implements ICommand {
 
 	private boolean left;
 	private BTreeEditor editor;
-	private BehaviorNode node;
-	private BehaviorNode parent;
+	private NodeRepresentation node;
+	private NodeRepresentation parent;
 
-	public MoveNodeCommand(BTreeEditor editor, BehaviorNode node, BehaviorNode parent, boolean left) {
+	public MoveNodeCommand(BTreeEditor editor, NodeRepresentation node, NodeRepresentation parent, boolean left) {
 		this.editor = editor;
 		this.node = node;
 		this.parent = parent;
