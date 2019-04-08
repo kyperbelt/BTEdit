@@ -1,8 +1,10 @@
 package com.kyper.btedit.gui;
 
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.ui.Value;
+import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.scenes.scene2d.utils.Layout;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
@@ -10,6 +12,9 @@ import com.kotcrab.vis.ui.VisUI;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kyper.btedit.BTreeEditor;
+import com.kyper.btedit.events.IEvent;
+import com.kyper.btedit.events.ProjectClosedEvent;
+import com.kyper.btedit.events.ProjectSelectionEvent;
 
 /**
  * tabs for opened projects
@@ -20,7 +25,7 @@ import com.kyper.btedit.BTreeEditor;
 public class ProjectTabs extends Table {
 
 	Array<Tab> tabs;
-	int selected = 0;
+	int selected = -1;
 	BTreeEditor editor;
 
 	public ProjectTabs(BTreeEditor editor) {
@@ -57,10 +62,17 @@ public class ProjectTabs extends Table {
 	 * @param tab
 	 */
 	public void removeTab(Tab tab) {
+		int index = tabs.indexOf(tab, true);
+		if(index == selected)
+			selected--;
 		tabs.removeValue(tab, true);
+		setSelectedIndex(selected);
+		editor.getEventManager().queue(new ProjectClosedEvent(editor.getWorkspace().getProjects().get(index)));
 	}
 
 	public void setSelectedIndex(int index) {
+		if(this.selected != index && index != -1)
+			editor.getEventManager().queue(new ProjectSelectionEvent(index));
 		this.selected = index;
 		refresh();
 	}
@@ -110,6 +122,13 @@ public class ProjectTabs extends Table {
 			this.name = name;
 			setBackground(VisUI.getSkin().getDrawable("button"));
 			closeButton = new VisTextButton("X");
+			closeButton.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					//TODO: Add some sort of check to make sure that the project is safe to close
+					Tab.this.tabs.removeTab(Tab.this);
+				}
+			});
 			this.nameLabel = new VisLabel(name);
 			add(this.nameLabel).growX();
 			add(closeButton);

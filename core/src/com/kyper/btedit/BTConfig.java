@@ -29,11 +29,11 @@ public class BTConfig {
 	public final static int COPY_KEY = Keys.C;
 	public final static int PASTE_KEY = Keys.V;
 
-	static final String LAST_SAVE_PATH = "last_save_path";
-	static final String RECENT_PROJECT = "recent_project_path";
-	static final String PROJECT_PATH = "project_path";
-	static final String NODES_FILE = "nodes_file";
-	static final String DEFAULT_NODES_FILE = "default.nodes";
-	static final String PROJ_FILE = "btree.proj";
+	public static final String LAST_SAVE_PATH = "last_save_path";
+	public static final String RECENT_PROJECT = "recent_project_path";
+	public static final String PROJECT_PATH = "project_path";
+	public static final String NODES_FILE = "nodes_file";
+	public static final String DEFAULT_NODES_FILE = "default.nodes";
+	public static final String PROJ_FILE = "btree.proj";
 	
 }

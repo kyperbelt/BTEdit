@@ -15,7 +15,10 @@ public class GroupCamera {
 	private float height;
 	private float zoom;
 	private Group group;
+	private Vector2 translation;
 	private Vector2 position;
+	private Vector2 lerp;
+	private Vector2 target;
 
 	public GroupCamera(int width, int height, Group group) {
 		this.width = width;
@@ -23,22 +26,42 @@ public class GroupCamera {
 		this.group = group;
 		this.zoom = 1f;
 		this.position = new Vector2(0, 0);
+		this.translation = new Vector2(0, 0);
+		this.lerp = new Vector2();
+		this.target = new Vector2();
 	}
 
-	public void setPosition(float x, float y) {
+	/**
+	 * set the position this camera rests at
+	 * @param x
+	 * @param y
+	 */
+	public void setAnchorPos(float x, float y) {
 		position.set(x, y);
 	}
 
 	public void translate(float x, float y) {
-		setPosition(position.x + x, position.y + y);
+		translation.add(x, y);
+	}
+	
+	public void setPosition(float x,float y) {
+		translation.set(x,y);
 	}
 
 	public void setZoom(float zoom) {
 		this.zoom = Math.max(.5f, zoom);
 	}
 
-	public Vector2 getPosition() {
+	/**
+	 * the position this camera considers its anchor or resting place -- 0-0
+	 * @return
+	 */
+	public Vector2 getAnchorPos() {
 		return position;
+	}
+
+	public Vector2 getTranslation() {
+		return translation;
 	}
 
 	public float getWidth() {
@@ -58,16 +81,32 @@ public class GroupCamera {
 		this.height = height;
 	}
 
+	public void update() {
+		this.update(false);
+	}
+
 	/**
 	 * transform the group attached to this camera
 	 */
-	public void update() {
-		float xoffset = 0;// getWidth()/2;
-		float yoffset = 0;// getHeight()/2;
+	public void update(boolean interpolate) {
 
-		group.setTransform(true);
-		group.setScale(zoom);
-		group.setPosition(-position.x + (width - (width * zoom)) * (width / width * zoom), position.y + (height - (height * zoom)) * (height / height * zoom));
+		if (interpolate) {
+
+			lerp.set(group.getX(), group.getY());
+			target.set(position.x + translation.x, position.y + translation.y);
+			lerp.lerp(target, .1f);
+
+			group.setPosition(lerp.x,lerp.y);
+		}else {
+			group.setPosition(position.x + translation.x, position.y + translation.y);
+		}
+		// float xoffset = 0;// getWidth()/2;
+		// float yoffset = 0;// getHeight()/2;
+
+		// group.setTransform(true);
+		// group.setScale(zoom);
+		// group.setPosition(-position.x + (width - (width * zoom)) * (width / width *
+		// zoom), position.y + (height - (height * zoom)) * (height / height * zoom));
 
 	}
 

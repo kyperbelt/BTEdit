@@ -11,6 +11,8 @@ public class NodeTree {
 	Node root;
 	
 	public void setRoot(Node root) {
+		if(root == null)
+			throw new UnsupportedOperationException("root cannot be null");
 		this.root = root;
 	}
 	

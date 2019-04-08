@@ -35,7 +35,7 @@ public class WorkspaceView extends VisWindow {
 	public WorkspaceView(BTreeEditor editor) {
 		super("Workspace");
 		this.editor = editor;
-		this.setResizable(true);
+		this.setResizable(false);
 		this.setPosition(0, 0);
 		this.setSize(300, Gdx.graphics.getHeight());
 		this.setMovable(false);
@@ -53,38 +53,18 @@ public class WorkspaceView extends VisWindow {
 		clearChildren();
 
 		VisTree tree = new VisTree();
-		
+
 		count = 0;
 
 		for (File d : file.listFiles()) {
-			System.out.println("file:"+d.getName());
-			if (d.isDirectory() && !d.getName().startsWith("\\.")) {
-				tree.add(getNode(d.getAbsolutePath(), 1));
-				count++;
-			} else {
-				if (d.getName().endsWith("." + BTConfig.EXTENSION)) {
-					final String name = d.getName();
-					VisLabel l = new VisLabel(name);
-					l.setTouchable(Touchable.enabled);
-
-					final Node node = new Node(l);
-					tree.add(node);
-					
-
-					l.addListener(new ClickListener() {
-						@Override
-						public void clicked(InputEvent event, float x, float y) {
-							openProjectFromNode(node);
-						}
-					});
-				}
-			}
+			Node n = getNode(d.getAbsolutePath(), 1);
+			if (n != null)
+				tree.add(n);
 		}
 
 		scrollPane = new VisScrollPane(tree);
 		add(scrollPane).grow();
 	}
-	
 
 	public Node getNode(String path, int level) {
 		count++;
@@ -92,49 +72,68 @@ public class WorkspaceView extends VisWindow {
 		Node n = null;
 		FileHandle dir = Gdx.files.absolute(path);
 		File file = dir.file();
-		n = new Node(new VisLabel(file.getName()));
-		if (file.isDirectory() && file.listFiles()!=null) {
-			for (File d : file.listFiles()) {
-				System.out.println("file:"+d.getName());
-				if (d.isDirectory() && !path.contains("\\\\.") && level < MAXLEVEL) {
-					n.add(getNode(d.getAbsolutePath(), level + 1));
-				} else {
-					if (d.getName().endsWith("." + BTConfig.EXTENSION)) {
-						final String name = d.getName();
-						VisLabel l = new VisLabel(name);
-						l.setTouchable(Touchable.enabled);
+		if (isValid(file)) {
+			
+			if (file.isDirectory() && file.listFiles() != null) {
+				n = new Node(new VisLabel(file.getName()));
+				for (File d : file.listFiles()) {
+					System.out.println("file:" + d.getName());
+					if (d.isDirectory() && !path.contains("\\\\.") && level < MAXLEVEL) {
+						n.add(getNode(d.getAbsolutePath(), level + 1));
+					} else {
+						if (d.getName().endsWith("." + BTConfig.EXTENSION)) {
+							final String name = d.getName();
+							VisLabel l = new VisLabel(name);
+							l.setTouchable(Touchable.enabled);
 
-						final Node node = new Node(l);
-						n.add(node);
-						
+							final Node node = new Node(l);
+							n.add(node);
 
-						l.addListener(new ClickListener() {
-							@Override
-							public void clicked(InputEvent event, float x, float y) {
-								openProjectFromNode(node);
-							}
-						});
-						
-						System.out.println("added file "+d.getName());
+							l.addListener(new ClickListener() {
+								@Override
+								public void clicked(InputEvent event, float x, float y) {
+									openProjectFromNode(node);
+								}
+							});
+
+							System.out.println("added file " + d.getName());
+						}
 					}
 				}
+			}else {
+				final String name = file.getName();
+				VisLabel l = new VisLabel(name);
+				l.setTouchable(Touchable.enabled);
+
+				n = new Node(l);
+				final Node node = n;
+
+				l.addListener(new ClickListener() {
+					@Override
+					public void clicked(InputEvent event, float x, float y) {
+						openProjectFromNode(node);
+					}
+				});
 			}
 		}
 
 		return n;
 	}
-	
+
+	private boolean isValid(File file) {
+		return (file.isDirectory() && !path.contains("\\\\.")) || file.getName().endsWith("." + BTConfig.EXTENSION);
+	}
 
 	public void openProjectFromNode(Node n) {
 		String path = "";
-		String name = ((VisLabel)n.getActor()).getText().toString();
+		String name = ((VisLabel) n.getActor()).getText().toString();
 		Node node = n.getParent();
-		while(node!=null) {
-			path = "\\"+((VisLabel)node.getActor()).getText().toString() + path;
+		while (node != null) {
+			path = "\\" + ((VisLabel) node.getActor()).getText().toString() + path;
 			node = node.getParent();
 		}
-		String projectPath = this.path+path;
-		editor.getWorkspace().open(projectPath,name);
+		String projectPath = this.path + path;
+		editor.getWorkspace().open(projectPath, name);
 	}
 
 	/**

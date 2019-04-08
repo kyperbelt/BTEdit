@@ -22,6 +22,7 @@ import com.kyper.btedit.Assets;
 import com.kyper.btedit.Assets.Textures;
 import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.data.Node;
+import com.kyper.btedit.data.NodeTree;
 import com.kyper.btedit.data.NodeType;
 import com.kyper.btedit.data.properties.NodeProperty;
 import com.kyper.btedit.events.NodeChangeEvent;
@@ -88,6 +89,7 @@ public class NodeRepresentation extends Group {
 			return true;
 		}
 	};
+	
 
 	boolean p_check = false;
 
@@ -519,6 +521,10 @@ public class NodeRepresentation extends Group {
 		//editor.centerNode(getRoot());
 
 	}
+	
+	public void setAnchored(boolean anchored) {
+		this.anchored = anchored;
+	}
 
 	public NodeRepresentation getRoot() {
 		if (parent != null)
@@ -561,6 +567,23 @@ public class NodeRepresentation extends Group {
 			return Assets.Textures.RED;
 		}
 	}
+	
+	/**
+	 * build a visual representation of the {@link com.kyper.btedit.data.NodeTree  NodeTree} data
+	 * @param editor
+	 * @param node
+	 * @return
+	 */
+	public static NodeRepresentation build(BTreeEditor editor,Node node) {
+		NodeRepresentation np = null;
+		np = new NodeRepresentation(editor, node);
+		for (int i = 0; i < node.getChildren().size; i++) {
+			Node child = node.getChildren().get(i);
+			np.addNode(build(editor,child));
+		}
+		return np;
+	}
+	
 	
 	//DEPRICATED SECTION
 	

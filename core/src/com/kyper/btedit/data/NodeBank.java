@@ -4,9 +4,11 @@ import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
-import com.kyper.btedit.BTConfig;
+import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.Utils;
+import com.kyper.btedit.events.NodeBankEvent;
 import com.kyper.btedit.formats.JsonFormater;
+import com.kyper.btedit.project.Workspace;
 
 /**
  * a bank of stored node types for use in behavior trees
@@ -19,8 +21,11 @@ public class NodeBank {
 	private Array<NodeTemplate> compositeNodes;
 	private Array<NodeTemplate> supplementNodes; // DECORATORSs
 	private Array<NodeTemplate> leafNodes;
+	
+	private BTreeEditor editor;
 
-	public NodeBank() {
+	public NodeBank(BTreeEditor editor) {
+		this.editor = editor;
 		compositeNodes = new Array<NodeTemplate>();
 		supplementNodes = new Array<NodeTemplate>();
 		leafNodes = new Array<NodeTemplate>();
@@ -120,5 +125,7 @@ public class NodeBank {
 
 		JsonValue leaf = root.get("leaf");
 		templateFromJson(leafNodes, leaf, NodeType.LEAF);
+		
+		editor.getEventManager().queue(new NodeBankEvent(NodeBankEvent.LOADED));
 	}
 }

@@ -69,7 +69,7 @@ public class JsonFormater implements FileFormater{
 		else if (NodeTemplate.templatesContainNodeName(bank.getLeaf(), name)) {
 			type = NodeType.LEAF;
 		} else {
-			throw new IllegalArgumentException("Unable to create Node:[" + name + "] ");
+			throw new IllegalArgumentException("Unable to create Node:[" + name + "] from template ");
 		}
 		
 		n = new Node();

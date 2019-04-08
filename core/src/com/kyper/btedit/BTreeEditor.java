@@ -19,6 +19,7 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.input.GestureDetector.GestureAdapter;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
@@ -43,15 +44,19 @@ import com.kotcrab.vis.ui.widget.file.FileChooserListener;
 import com.kyper.btedit.command.ICommand;
 import com.kyper.btedit.data.NodeTemplate;
 import com.kyper.btedit.events.EventManager;
-import com.kyper.btedit.events.IEvent;
 import com.kyper.btedit.events.IEventListener;
+import com.kyper.btedit.events.NodeBankEvent;
+import com.kyper.btedit.events.ProjectClosedEvent;
 import com.kyper.btedit.events.ProjectOpenEvent;
+import com.kyper.btedit.events.ProjectSelectionEvent;
 import com.kyper.btedit.gui.GroupCamera;
+import com.kyper.btedit.gui.NodePalate;
 import com.kyper.btedit.gui.NodeRepresentation;
 import com.kyper.btedit.gui.ProjectTabs;
 import com.kyper.btedit.gui.PropertyDisplay;
 import com.kyper.btedit.gui.WelcomePage;
 import com.kyper.btedit.gui.WorkspaceView;
+import com.kyper.btedit.project.Project;
 import com.kyper.btedit.project.Workspace;
 
 public class BTreeEditor extends ApplicationAdapter {
@@ -89,8 +94,6 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public String m_currentProjectFolderName = null;
 	public NodeTemplate m_defaultRootTemplate = null;
-
-	public Preferences prefs;
 
 	public Array<NodeTemplate> composite_nodes;
 	public Array<NodeTemplate> supplement_nodes;
@@ -141,18 +144,21 @@ public class BTreeEditor extends ApplicationAdapter {
 	private Workspace workspace;
 	private WorkspaceView workspaceView;
 	private ProjectTabs tabs;
-	
+	private NodePalate palate;
+
 	private EventManager eventManager;
-	
-	//layout
+
+	// layout
 	private Table root;
-	private Table workspaceContainer; //left side container for workspaceView
-	private Table midContainer; //the middle container for the tabs and current tree view
-	private Table tabContainer; //container for the tabs;
-	private Table treeContainer; //contains the tree currently being worked on
-	private Table buttonContainer; //container for the buttons with actions that can be done for the current project
-	
-	
+	private Table workspaceContainer; // left side container for workspaceView
+	private Table midContainer; // the middle container for the tabs and current tree view
+	private Table tabContainer; // container for the tabs;
+	private Table treeContainer; // contains the tree currently being worked on
+	private Table buttonContainer; // container for the buttons with actions that can be done for the current
+									// project
+
+	public Preferences prefs;
+
 	// ----------------------------------------------------------
 
 	@Override
@@ -162,50 +168,100 @@ public class BTreeEditor extends ApplicationAdapter {
 		// VisUI.getSkin().get("default",LabelStyle.class).fontColor = Color.DARK_GRAY;
 		Assets.loadTextures();
 		Assets.createStyles();
-		
-		//--events
+
+		// --events
 		eventManager = new EventManager();
 		eventManager.addListener(new IEventListener<ProjectOpenEvent>() {
-			
+
 			public boolean react(ProjectOpenEvent event) {
-				System.out.println("project opened:"+event.projectName+" project-path:"+event.projectPath);
+				System.out.println("project opened:" + event.projectName + " project-path:" + event.projectPath);
 				tabs.addTab(event.projectName);
+				palate.toFront();
 				return true;
-			}; 
-			
+			};
+
 		}, ProjectOpenEvent.class);
+		eventManager.addListener(new IEventListener<ProjectSelectionEvent>() {
+			@Override
+			public boolean react(ProjectSelectionEvent event) {
+
+				Project selectedProject = workspace.getProjects().get(event.index);
+				NodeRepresentation n = selectedProject.getRootNodeRepresentation(BTreeEditor.this);
+
+				treeContainer.clear();
+				treeContainer.addActor(n);
+				n.setAnchored(false);
+				n.layout(true);
+				resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+				selectedProject.reAnchorRoot(treeContainer);
+
+				
+				palate.toFront();
+				System.out.println("project index selected :" + event.index);
+				return true;
+			}
+
+		}, ProjectSelectionEvent.class);
+		eventManager.addListener(new IEventListener<ProjectClosedEvent>() {
+			@Override
+			public boolean react(ProjectClosedEvent event) {
+				System.out.println("projectClosed : " + event.project.getName());
+				
+				return false;
+			}
+		}, ProjectClosedEvent.class);
 		
-		//--EVENTS END
+		eventManager.addListener(new IEventListener<NodeBankEvent>() {
+			@Override
+			public boolean react(NodeBankEvent event) {
+				if(event.type == NodeBankEvent.LOADED) {
+					palate.remove();
+					int width = Gdx.graphics.getWidth();
+					int height = Gdx.graphics.getHeight();
+					palate.setPosition(width-palate.getWidth(), height * .85f - palate.getHeight());
+					stage.addActor(palate);
+					palate.refreshPalate(workspace.getNodeBank());
+					
+				}
+				return false;
+			}
+		}, NodeBankEvent.class);
+
+		// --EVENTS END
 
 		prefs = Gdx.app.getPreferences(BTConfig.PREF_NAME);
 
 		ScreenViewport sv = new ScreenViewport();
-		
+
 		stage = new Stage(sv);
 		stage.setDebugAll(BTConfig.DEBUG);
-		
+
 		root = new Table();
 		root.setFillParent(true);
 		stage.getRoot().addActor(root);
 		
-		//--containers
+		palate = new NodePalate();
+
+		// --containers
 		workspaceContainer = new Table();
 		midContainer = new Table();
 		tabContainer = new Table();
 		treeContainer = new Table();
 		treeContainer.setClip(true);
+		treeContainer.setTransform(true);
+		treeContainer.setFillParent(true);
 		buttonContainer = new Table();
-		
+
 		root.add(workspaceContainer).width(300).growY();
 		root.add(midContainer).grow();
-		
+
 		int barHeight = 30;
-		
+
 		midContainer.align(Align.top);
 		midContainer.add(tabContainer).padTop(20).align(Align.topLeft).height(barHeight).growX().row();
 		midContainer.add(treeContainer).grow().row();
-		midContainer.add(buttonContainer).align(Align.right).height(barHeight).growX();
 		
+		midContainer.add(buttonContainer).align(Align.right).height(barHeight).growX();
 
 		background = new Sprite(new Texture(Gdx.files.internal("background.png")));
 		background.setColor(new Color(Color.WHITE.r, Color.WHITE.g, Color.WHITE.b, .2f));
@@ -213,22 +269,18 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		welcomePage = new WelcomePage(this);
 		stage.addActor(welcomePage);
-		
+
 		tabs = new ProjectTabs(this);
 		tabContainer.add(tabs).left().grow();
-		
-		
-		
-		// TODO: add input before stage to pickup shortcut keys -- see below as its
-		// commented out
-		Gdx.input.setInputProcessor(new InputMultiplexer(stage));
+
+	
 
 		// ---workspace
 		createWorkSpaceChooser();
 		workspaceView = new WorkspaceView(this);
-		
 
 		batch = new SpriteBatch();
+		treeContainer.setSize(Gdx.graphics.getWidth() - workspaceView.getWidth(), Gdx.graphics.getHeight() - 80);
 		
 		// property_display = new PropertyDisplay(this);
 		//
@@ -277,7 +329,80 @@ public class BTreeEditor extends ApplicationAdapter {
 		// project_path = prefs.getString(BTConfig.PROJECT_PATH);
 		//
 
+		GestureAdapter gesture = new GestureAdapter() {
+			@Override
+			public boolean pan(float x, float y, float deltaX, float deltaY) {
+				// TODO Auto-generated method stub
+				return super.pan(x, y, deltaX, deltaY);
+			}
+		};
+		
 		InputAdapter input = new InputAdapter() {
+			
+			boolean scroll = false;
+			Vector2 trackPos = new Vector2();
+			Vector2 camPos = new Vector2();
+			
+			@Override
+			public boolean touchDragged(int screenX, int screenY, int pointer) {
+				if(scroll) {// && treeContainer.hit((float)screenX, (float)screenY, true)!=null) {
+					System.out.println(String.format(" dragged x=%s , y=%s",screenX,screenY));
+					if(workspace!=null && tabs.getSelectedIndex()!= -1) {
+						Project p = workspace.getProjects().get(tabs.getSelectedIndex());
+						GroupCamera cam = p.getCamera();
+						camPos.set(Gdx.input.getX(),Gdx.input.getY());
+						camPos.sub(trackPos);
+						
+						cam.translate(camPos.x * 1.5f, -camPos.y * 1.5f);
+						trackPos.add(camPos);
+						cam.update(true);
+					}
+				}
+				
+				return false;
+			}
+			
+			
+			
+			@Override
+			public boolean touchDown(int screenX, int screenY, int pointer, int button) {
+				if(button == 1) {
+					System.out.println("touch down");
+					scroll = true;
+					trackPos.set(Gdx.input.getX(),Gdx.input.getY());
+				}
+				return false;
+			}
+			
+			@Override
+			public boolean touchUp(int screenX, int screenY, int pointer, int button) {
+				if(button == 1) {
+					scroll = false;
+				}
+				return false;
+			}
+			
+			@Override
+			public boolean mouseMoved(int screenX, int screenY) {
+				
+				
+				return false;
+			}
+			
+			
+			@Override
+			public boolean keyDown(int keycode) {
+			
+				return false;
+			}
+			
+			@Override
+			public boolean keyUp(int keycode) {
+				return false;
+			}
+			
+			
+			
 			// public boolean scrolled(int amount) {
 			// if (!busy) {
 			// float sa = 0.05f * amount;
@@ -384,6 +509,13 @@ public class BTreeEditor extends ApplicationAdapter {
 			// return false;
 			// }
 		};
+		
+		
+		
+		// TODO: add input before stage to pickup shortcut keys -- see below as its
+		// commented out
+		Gdx.input.setInputProcessor(new InputMultiplexer(input,stage));
+		
 		//
 		// chooser = new FileChooser(Gdx.files.external(last_save_path), Mode.OPEN);
 		// chooser.getTitleTable().getCells().get(1).getActor().addListener(new
@@ -595,23 +727,23 @@ public class BTreeEditor extends ApplicationAdapter {
 		// setCorrectNodes();
 
 	}
-	
+
 	public EventManager getEventManager() {
 		return eventManager;
 	}
-	
+
 	public Table getRoot() {
 		return root;
 	}
-	
+
 	public Table getTreeContainer() {
 		return treeContainer;
 	}
-	
+
 	public ProjectTabs getTabs() {
 		return tabs;
 	}
-	
+
 	public Workspace getWorkspace() {
 		return workspace;
 	}
@@ -622,10 +754,10 @@ public class BTreeEditor extends ApplicationAdapter {
 			@Override
 			public void run() {
 				busy = true;
-				stage.addActor(projectFolderChooser);				
+				stage.addActor(projectFolderChooser);
 			}
 		});
-		
+
 	}
 
 	public boolean exit() {
@@ -687,30 +819,37 @@ public class BTreeEditor extends ApplicationAdapter {
 		// --------
 
 		stage.draw();
-		
+
 		eventManager.process(true);
 	}
 
 	@Override
 	public void resize(int width, int height) {
-		
-		stage.getViewport().update(width, height,true);
+
+		stage.getViewport().update(width, height, true);
 		stage.getViewport().apply();
-		
+
 		root.remove();
 		stage.addActor(root);
-		
+
 		centerActor(welcomePage);
-		
+
+		treeContainer.setSize(width - workspaceView.getWidth(), height - 80);
+
 		Vector2 po = new Vector2(0, Gdx.graphics.getHeight());
 		po = stage.getViewport().unproject(po);
-		
+
+		if (tabs.getSelectedIndex() != -1)
+			workspace.getProjects().get(tabs.getSelectedIndex()).reAnchorRoot(treeContainer);
 
 		// node_camera.resize(width, height);
 		// node_camera.update();
 		//
 		// resetTreeViewSize();
 		// tt.setPosition(po.x, po.y);
+		
+		if(palate!=null)
+			palate.toFront();
 
 	}
 
@@ -724,17 +863,17 @@ public class BTreeEditor extends ApplicationAdapter {
 			public void selected(Array<FileHandle> files) {
 				busy = false;
 				FileHandle dir = files.first();
-				
+
 				String workSpacePath = dir.file().getAbsolutePath();
-				Gdx.app.log("workspaceChooser", "dir chosen:"+workSpacePath);
+				Gdx.app.log("workspaceChooser", "dir chosen:" + workSpacePath);
 				openWorkSpace(workSpacePath);
 			}
-			
+
 			@Override
 			public void canceled() {
 				Gdx.app.log("workspaceChooser", "cancelled");
 			}
-			
+
 		});
 		projectFolderChooser.getTitleTable().getCells().get(1).getActor().addListener(new ClickListener() {
 			@Override
@@ -745,24 +884,26 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		projectFolderChooser.setSelectionMode(SelectionMode.DIRECTORIES);
 	}
-	
+
 	/**
 	 * attempt to open the workspace - return false if unable to open path
+	 * 
 	 * @param path
 	 * @return
 	 */
-	private boolean openWorkSpace(String path){
-		if(path.isEmpty())
+	public boolean openWorkSpace(String path) {
+		if (path.isEmpty())
 			return false;
-		
-		workspace = new Workspace(path,this);
+		System.out.println("workspace opened :" + path);
+		workspace = new Workspace(path, this);
+		prefs.putString(BTConfig.RECENT_PROJECT, path);
 		welcomePage.remove();
 		workspaceContainer.add(workspaceView).grow();
 		workspaceView.refresh(path);
 		busy = false;
 		return true;
 	}
-	
+
 	// -----
 
 	//
@@ -803,7 +944,7 @@ public class BTreeEditor extends ApplicationAdapter {
 	// *
 	// * @param nodes
 	// */
-	
+
 	//
 	// public void setCurrentProjectFolderName(String path) {
 	// String[] p = path.split("/");
@@ -967,11 +1108,10 @@ public class BTreeEditor extends ApplicationAdapter {
 	//
 	// }
 	//
-	
+
 	//
 
 	//
-	
 
 	//
 	// public void setDirty() {

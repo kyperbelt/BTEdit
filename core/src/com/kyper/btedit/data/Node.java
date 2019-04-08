@@ -40,6 +40,12 @@ public class Node {
 		}
 	}
 	
+	public void remove() {
+		Node p = getParent();
+		if(p != null)
+			p.getChildren().removeValue(this, true);
+	}
+	
 	public void setTree(NodeTree tree) {
 		this.tree = tree;
 	}

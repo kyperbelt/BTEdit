@@ -34,7 +34,7 @@ public class Workspace {
 
 	public Workspace(String path, BTreeEditor editor) {
 		projects = new Array<Project>();
-		nodeBank = new NodeBank();
+		nodeBank = new NodeBank(editor);
 		nodeBank.loadNodeTemplates(Gdx.files.absolute(path+"\\"+"nodes.template"));
 
 		/**
@@ -44,6 +44,10 @@ public class Workspace {
 
 		this.path = path;
 		this.editor = editor;
+	}
+	
+	public NodeBank getNodeBank() {
+		return nodeBank;
 	}
 
 	public FileManager getFileManager() {

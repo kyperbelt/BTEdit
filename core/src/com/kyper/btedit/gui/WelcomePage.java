@@ -6,6 +6,7 @@ import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
 import com.badlogic.gdx.utils.Align;
 import com.kotcrab.vis.ui.widget.LinkLabel;
 import com.kotcrab.vis.ui.widget.LinkLabel.LinkLabelListener;
+import com.kyper.btedit.BTConfig;
 import com.kyper.btedit.BTreeEditor;
 import com.kotcrab.vis.ui.widget.VisLabel;
 import com.kotcrab.vis.ui.widget.VisTextButton;
@@ -38,13 +39,21 @@ public class WelcomePage extends VisWindow{
 		setSize(WIDTH, HEIGHT);
 		setCenterOnAdd(true);
 		align(Align.top);
+		setModal(true);
 		
 		recentLabel = new VisLabel("Recent:");
-		recent = new LinkLabel("example/yourlastworkspace");
+		String recentText = editor.prefs.getString(BTConfig.RECENT_PROJECT);
+		
+		recent = new LinkLabel(recentText == null ? "n/a":recentText);
+		recent.setWidth(WIDTH);
+		recent.setWrap(true);
+		
 		recent.setListener(new LinkLabelListener() {
 			@Override
 			public void clicked(String url) {
-				System.out.println("clicked");
+				if(url.equals("n/a"))
+					return;
+				WelcomePage.this.editor.openWorkSpace(url);
 				
 			}
 		});
@@ -60,8 +69,8 @@ public class WelcomePage extends VisWindow{
 		add().padBottom(20).row();
 		{
 			Table t = new Table();
-			t.add(recentLabel).grow().row();
-			t.add(recent).left();
+			t.add(recentLabel).growX().row();
+			t.add(recent).growX().align(Align.topLeft);
 			add(t).align(Align.topLeft).growX();
 		}
 		add(open).align(Align.topLeft).padRight(20);
