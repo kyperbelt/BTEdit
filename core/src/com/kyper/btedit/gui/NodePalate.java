@@ -3,6 +3,9 @@ package com.kyper.btedit.gui;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
+import com.badlogic.gdx.scenes.scene2d.InputEvent;
+import com.badlogic.gdx.scenes.scene2d.InputListener;
+import com.badlogic.gdx.scenes.scene2d.Touchable;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.NinePatchDrawable;
 import com.badlogic.gdx.utils.Align;
@@ -12,8 +15,11 @@ import com.kotcrab.vis.ui.widget.VisScrollPane;
 import com.kotcrab.vis.ui.widget.VisTextButton;
 import com.kotcrab.vis.ui.widget.VisWindow;
 import com.kyper.btedit.Assets;
+import com.kyper.btedit.BTreeEditor;
 import com.kyper.btedit.data.NodeBank;
 import com.kyper.btedit.data.NodeTemplate;
+import com.kyper.btedit.data.NodeType;
+import com.kyper.btedit.events.NodePalateDragEvent;
 
 /**
  * in editor view of all available nodes allowing for easy drag and drop of nodes into trees
@@ -37,6 +43,9 @@ public class NodePalate extends VisWindow{
 	private NodesList leaf;
 	
 	private VisScrollPane scroll;
+	
+	private float distanceFromRight = 0;
+	
 
 	public NodePalate() {
 		super("Nodes");
@@ -70,6 +79,17 @@ public class NodePalate extends VisWindow{
 		setMinimized(false);
 	}
 	
+	public float getDistFromRight() {
+		return distanceFromRight;
+	}
+	
+	@Override
+	protected void positionChanged() {
+		distanceFromRight = Gdx.graphics.getWidth() - (getX() + getWidth());
+		super.positionChanged();
+		
+	}
+	
 	public void refreshPalate(NodeBank bank) {
 		composite.refreshList(bank.getComposite());
 		supplement.refreshList(bank.getSupplement());
@@ -96,6 +116,8 @@ public class NodePalate extends VisWindow{
 		
 		pack();
 	}
+	
+	
 	
 	
 	static class NodesList extends Table{
@@ -134,7 +156,7 @@ public class NodePalate extends VisWindow{
 			nodeItems.clear();
 			for (int i = 0; i < nodes.size; i++) {
 				NodeTemplate nt = nodes.get(i);
-				nodeItems.add(new NodeItem(nt.getNodeName())).align(Align.left).padBottom(5).growX().row();
+				nodeItems.add(new NodeItem(nt.getNodeName(),nt.getNodeType())).align(Align.left).padBottom(5).growX().row();
 				
 			}
 		}
@@ -165,10 +187,25 @@ public class NodePalate extends VisWindow{
 		
 		VisLabel nameLabel;
 		VisTextButton edit;
+		NodeType type;
 		
-		public NodeItem(String name) {
-			
+		public NodeItem(final String name,NodeType type) {
+			this.type = type;
 			align(Align.left);
+			setTouchable(Touchable.enabled);
+			addListener(new InputListener() {
+				@Override
+				public boolean touchDown(InputEvent event, float x, float y, int pointer, int button) {
+						BTreeEditor.instance().getEventManager().queue(new NodePalateDragEvent(name, NodeItem.this.type, NodePalateDragEvent.TOUCHDOWN));
+					return true;
+				}
+				
+				@Override
+				public void touchUp(InputEvent event, float x, float y, int pointer, int button) {
+					BTreeEditor.instance().getEventManager().queue(new NodePalateDragEvent(name, NodeItem.this.type, NodePalateDragEvent.TOUCHUP));
+				}
+			});
+			
 			
 			nameLabel = new VisLabel(name);
 			edit = new VisTextButton("edit");

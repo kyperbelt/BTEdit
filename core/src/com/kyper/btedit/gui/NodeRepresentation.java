@@ -179,7 +179,7 @@ public class NodeRepresentation extends Group {
 			}
 		});
 
-		NinePatch bg_patch = new NinePatch(getTexture(), 14, 14, 28, 14);
+		NinePatch bg_patch = new NinePatch(getTexture(this.node.getNodeType()), 14, 14, 28, 14);
 		NinePatchDrawable bg = new NinePatchDrawable(bg_patch);
 
 		node_table.setBackground(bg);
@@ -555,8 +555,8 @@ public class NodeRepresentation extends Group {
 
 
 
-	private Texture getTexture() {
-		switch (node.getNodeType()) {
+	public static Texture getTexture(NodeType type) {
+		switch (type) {
 		case COMPOSITE:
 			return Assets.Textures.BLUE;
 		case SUPPLEMENT:

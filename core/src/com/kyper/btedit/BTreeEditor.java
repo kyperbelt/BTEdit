@@ -19,14 +19,19 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.input.GestureDetector.GestureAdapter;
 import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.scenes.scene2d.Action;
 import com.badlogic.gdx.scenes.scene2d.Actor;
 import com.badlogic.gdx.scenes.scene2d.Group;
 import com.badlogic.gdx.scenes.scene2d.InputEvent;
 import com.badlogic.gdx.scenes.scene2d.Stage;
+import com.badlogic.gdx.scenes.scene2d.actions.Actions;
+import com.badlogic.gdx.scenes.scene2d.ui.Image;
 import com.badlogic.gdx.scenes.scene2d.ui.Table;
 import com.badlogic.gdx.scenes.scene2d.utils.ClickListener;
+import com.badlogic.gdx.scenes.scene2d.utils.TextureRegionDrawable;
 import com.badlogic.gdx.utils.Align;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.ScreenViewport;
@@ -46,6 +51,7 @@ import com.kyper.btedit.data.NodeTemplate;
 import com.kyper.btedit.events.EventManager;
 import com.kyper.btedit.events.IEventListener;
 import com.kyper.btedit.events.NodeBankEvent;
+import com.kyper.btedit.events.NodePalateDragEvent;
 import com.kyper.btedit.events.ProjectClosedEvent;
 import com.kyper.btedit.events.ProjectOpenEvent;
 import com.kyper.btedit.events.ProjectSelectionEvent;
@@ -137,6 +143,12 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	// new-------------------------------------------------------
 
+	//singleton
+	private static BTreeEditor _editor = null;
+	public static BTreeEditor instance() {
+		return _editor;
+	}
+	
 	private Stage stage;
 	private WelcomePage welcomePage;
 	private FileChooser projectFolderChooser;
@@ -158,17 +170,23 @@ public class BTreeEditor extends ApplicationAdapter {
 									// project
 
 	public Preferences prefs;
+	
+	private Image dragImage;
 
 	// ----------------------------------------------------------
 
 	@Override
 	public void create() {
+		_editor = this;
 		VisUI.load(SkinScale.X1);
 
 		// VisUI.getSkin().get("default",LabelStyle.class).fontColor = Color.DARK_GRAY;
 		Assets.loadTextures();
 		Assets.createStyles();
 
+		dragImage = new Image();
+		dragImage.setSize(48, 48);
+		
 		// --events
 		eventManager = new EventManager();
 		eventManager.addListener(new IEventListener<ProjectOpenEvent>() {
@@ -226,6 +244,33 @@ public class BTreeEditor extends ApplicationAdapter {
 				return false;
 			}
 		}, NodeBankEvent.class);
+		
+		eventManager.addListener(new IEventListener<NodePalateDragEvent>() {
+			@Override
+			public boolean react(NodePalateDragEvent event) {
+				if(event.eventType == NodePalateDragEvent.TOUCHDOWN) {
+					
+					dragImage.clear();
+					setDragTexture(NodeRepresentation.getTexture(event.nodeType));
+					dragImage.addAction(new Action() {
+						@Override
+						public boolean act(float delta) {
+							float x = Gdx.input.getX();
+							float y = Gdx.input.getY();
+							Vector2 trans = new Vector2(x,y);
+							trans = stage.screenToStageCoordinates(trans);
+							dragImage.setPosition(trans.x-dragImage.getWidth()*.5f, trans.y-dragImage.getHeight()*.5f);
+							return false;
+						}
+					});
+					stage.addActor(dragImage);
+					
+				}else if(event.eventType == NodePalateDragEvent.TOUCHUP) {
+					 dragImage.remove();
+				}
+				return true;
+			}
+		}, NodePalateDragEvent.class);
 
 		// --EVENTS END
 
@@ -747,6 +792,14 @@ public class BTreeEditor extends ApplicationAdapter {
 	public Workspace getWorkspace() {
 		return workspace;
 	}
+	
+	public void setDragTexture(Texture texture) {
+		dragImage.setDrawable(new TextureRegionDrawable(new TextureRegion(texture)));
+	}
+	
+	public Image getDragImage() {
+		return dragImage;
+	}
 
 	public void openWorkspaceChooser() {
 		projectFolderChooser.remove();
@@ -848,8 +901,10 @@ public class BTreeEditor extends ApplicationAdapter {
 		// resetTreeViewSize();
 		// tt.setPosition(po.x, po.y);
 		
-		if(palate!=null)
+		if(palate!=null) {
 			palate.toFront();
+			palate.setX(width - (palate.getWidth()+palate.getDistFromRight()));
+		}
 
 	}
 
