@@ -10,6 +10,7 @@ public class CreateNodeCommand implements ICommand {
 	private BehaviorNode node;
 	private BehaviorNode parent;
 	private int index;
+	private boolean insertFirst;
 
 	/**
 	 * create and add the behavior node to the parent or create as root if no parent
@@ -25,11 +26,16 @@ public class CreateNodeCommand implements ICommand {
 	 *            - the index in which to place the node relative to the parent (-1)
 	 *            just means ad
 	 */
-	public CreateNodeCommand(BTreeEditor editor, BehaviorNode node, BehaviorNode parent, int index) {
+	public CreateNodeCommand(BTreeEditor editor, BehaviorNode node, BehaviorNode parent, int index, boolean insertFirst) {
 		this.editor = editor;
 		this.node = node;
 		this.parent = parent;
 		this.index = index;
+		this.insertFirst = insertFirst;
+	}
+
+	public CreateNodeCommand(BTreeEditor editor, BehaviorNode node, BehaviorNode parent, int index) {
+		this(editor, node, parent, index, false);
 	}
 
 	@Override
@@ -43,8 +49,15 @@ public class CreateNodeCommand implements ICommand {
 			if (index == -1) {
 				parent.addNode(node);
 				editor.setSelectedNode(node);
+				if (insertFirst)
+				{
+					parent.moveToFirst(node);
+				}
+			} else
+			{
+				parent.addNode(node, index);
+				editor.setSelectedNode(node);
 			}
-
 		}
 	}
 
@@ -53,11 +66,8 @@ public class CreateNodeCommand implements ICommand {
 		if (parent == null) {
 
 		} else {
-
-			if (index == -1) {
 				parent.removeNode(node);
 				editor.setSelectedNode(parent);
-			}
 		}
 	}
 

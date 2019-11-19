@@ -8,6 +8,7 @@ public class CutNodeCommand implements ICommand{
 	BTreeEditor edit;
 	BehaviorNode parent;
 	BehaviorNode node;
+	private int index;
 	
 	public CutNodeCommand(BTreeEditor edit,BehaviorNode parent,BehaviorNode node) {
 		this.edit = edit;
@@ -17,14 +18,20 @@ public class CutNodeCommand implements ICommand{
 
 	@Override
 	public void execute() {
-		parent.removeNode(node);
-		edit.setClipboard(node);
-		edit.setSelectedNode(parent);
+		index = node.getIndex();
+		if (parent != null) {
+			edit.setSelectedNode(parent);
+			edit.setClipboard(node);
+			parent.removeNode(node);
+		}
 	}
 
 	@Override
 	public void undo() {
-		parent.addNode(node);
+		System.out.println("undo cut");
+		if (parent == null) return;
+				System.out.println("undo cut2: index" + index);
+		parent.addNode(node, index);
 		edit.setSelectedNode(node);
 	}
 

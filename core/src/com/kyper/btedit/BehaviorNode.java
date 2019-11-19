@@ -95,6 +95,13 @@ public class BehaviorNode extends Group {
 	public BehaviorNode(final BTreeEditor editor, NodeType type, String name) {
 		setTransform(true);
 		properties = new NodeProperties();
+		if (name.contains(":"))
+		{
+			//this means its a template
+			//so take everything after colon!
+			name = name.substring(name.indexOf(":")+1, name.length());
+		}
+
 		this.nodename = name;
 		this.editor = editor;
 		this.type = type;
@@ -135,9 +142,8 @@ public class BehaviorNode extends Group {
 			}
 		};
 
-		createNodeTable();
-		addActor(node_table);
-
+			createNodeTable();
+			addActor(node_table);
 	}
 	
 	@Override
@@ -336,7 +342,6 @@ public class BehaviorNode extends Group {
 
 		getRoot().layout();
 		
-		
 	}
 
 	public void addNode(BehaviorNode node, int index) {
@@ -434,10 +439,10 @@ public class BehaviorNode extends Group {
 		return -1;
 	}
 
-	public void moveLeft(BehaviorNode node) {
+	public boolean moveLeft(BehaviorNode node) {
 		int pos = arrayNumber(node);
-		if (pos < 0)
-			return;
+		if (pos < 1)
+			return false;
 
 		int newPos = pos - 1;
 		children.swap(newPos, pos);
@@ -445,6 +450,15 @@ public class BehaviorNode extends Group {
 		layout();
 		updateArrows();
 		updateArrowsOnChildren();
+		return true;
+	}
+
+	public void moveToFirst(BehaviorNode node) {
+		boolean more = moveLeft(node);
+		while (more)
+		{
+			more = moveLeft(node);
+		}
 	}
 
 	public void moveRight(BehaviorNode node) {
@@ -600,6 +614,8 @@ public class BehaviorNode extends Group {
 	public BehaviorNode getCopy() {
 		BehaviorNode copy = new BehaviorNode(editor, type, nodename);
 		copy.properties.makeCopyOf(properties);
+		copy.createProperties();
+
 		
 		for (int i = 0; i < children.size; i++) {
 			BehaviorNode c = children.get(i).getCopy();

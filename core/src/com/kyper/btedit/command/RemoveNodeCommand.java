@@ -36,8 +36,6 @@ public class RemoveNodeCommand implements ICommand {
 			} else {
 				parent.removeNode(node);
 			}
-			
-			
 		}
 	}
 

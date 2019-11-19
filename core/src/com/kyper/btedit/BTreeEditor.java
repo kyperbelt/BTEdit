@@ -50,8 +50,7 @@ import com.kotcrab.vis.ui.widget.file.FileChooser.Mode;
 import com.kotcrab.vis.ui.widget.file.FileChooser.SelectionMode;
 import com.kotcrab.vis.ui.widget.file.SingleFileChooserListener;
 import com.kyper.btedit.BehaviorNode.NodeType;
-import com.kyper.btedit.command.CreateNodeCommand;
-import com.kyper.btedit.command.ICommand;
+import com.kyper.btedit.command.*;
 import com.kyper.btedit.displays.PropertyDisplay;
 
 public class BTreeEditor extends ApplicationAdapter {
@@ -73,6 +72,9 @@ public class BTreeEditor extends ApplicationAdapter {
 	final static String FORWARD_DASH = "/";
 	final static String BACK_DASH = "\\";
 
+	public final static int TAB_KEY = Keys.TAB;
+	public final static int UP_KEY = Keys.UP;
+	public final static int DOWN_KEY = Keys.DOWN;
 	public final static int UNDO_KEY = Keys.Z;
 	public final static int REDO_KEY = Keys.Y;
 	public final static int CUT_KEY = Keys.X;
@@ -93,7 +95,6 @@ public class BTreeEditor extends ApplicationAdapter {
 	boolean m_drag = false;
 	float m_dragScreenX;
 	float m_dragScreenY;
-	
 	
 
 	public Stage stage;
@@ -134,6 +135,7 @@ public class BTreeEditor extends ApplicationAdapter {
 	public VisSelectBox<String> nodetype_sel;
 	public VisSelectBox<String> node_sel;
 	public VisTextButton select;
+	public VisTextButton selectFront;
 
 	public VisTextButton insert;
 
@@ -142,6 +144,7 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public boolean dirty = false;
 	public boolean busy = false;
+	public boolean selectingNodes = false;
 
 	public PropertyDisplay property_display;
 
@@ -150,7 +153,7 @@ public class BTreeEditor extends ApplicationAdapter {
 	public FileChooser saver;
 
 	public Array<ICommand> commands;
-	public int command_index = 0;
+	public int command_index = -1;
 
 	public static JsonReader reader;
 
@@ -265,6 +268,14 @@ public class BTreeEditor extends ApplicationAdapter {
 			@Override
 			public boolean keyUp(int keycode) {
 
+				if (selectingNodes)
+				{
+					//FUTURE TODO:
+					//Look into using tab and keyboard with VisControls
+					//and implement
+
+				}
+
 				if (busy)
 					return false;
 
@@ -274,13 +285,31 @@ public class BTreeEditor extends ApplicationAdapter {
 					System.out.println(String.format("UNDO: current index = %s | command size = %s", command_index,
 							commands.size));
 					return true;
-				} else
-
-				if (keycode == REDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
-					stage.unfocusAll();
-					redo();
+				} else if (keycode == REDO_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+						stage.unfocusAll();
+						redo();
 					
 					return true;
+				} else if (keycode == COPY_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					if (getSelectedNode() != null) {
+						CopyNodeCommand command = new CopyNodeCommand(BTreeEditor.this, getSelectedNode());
+						addAndExecuteCommand(command);
+					}
+				} else if (keycode == CUT_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					if (getSelectedNode() != null) {
+						CutNodeCommand command = new CutNodeCommand(BTreeEditor.this, getSelectedNode().parent, getSelectedNode());
+						addAndExecuteCommand(command);
+					}
+				} else if (keycode == PASTE_KEY && Gdx.input.isKeyPressed(Keys.CONTROL_LEFT)) {
+					if (getSelectedNode() != null)
+					{
+						BehaviorNode pasteNode = getClipboard();
+						if (pasteNode != null)
+						{
+							PasteNodeCommand command = new PasteNodeCommand(BTreeEditor.this, getSelectedNode(), pasteNode);
+							addAndExecuteCommand(command);
+						}
+					}
 				}
 
 				return super.keyUp(keycode);
@@ -441,7 +470,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		node_chooser = new VisWindow("Node Select");
 		// node_chooser.setMovable(false);
 		node_chooser.setModal(true);
-		node_chooser.setSize(500, 130);
+		node_chooser.setSize(650, 152);
 		node_chooser.addCloseButton();
 		nodetype_sel = new VisSelectBox<String>();
 		nodetype_sel.setItems("Composite", "Supplement", "Leaf");
@@ -453,6 +482,7 @@ public class BTreeEditor extends ApplicationAdapter {
 		});
 
 		node_sel = new VisSelectBox<String>();
+		selectFront = new VisTextButton("As Child - First");
 		select = new VisTextButton("As Child");
 		insert = new VisTextButton("As Parent");
 
@@ -462,7 +492,8 @@ public class BTreeEditor extends ApplicationAdapter {
 		node_chooser.add(node_sel).growX().row();
 
 		node_chooser.add(insert).colspan(4).expandX().align(Align.right).padTop(5).row();
-		node_chooser.add(select).colspan(4).expandX().align(Align.right).padTop(5);
+		node_chooser.add(select).colspan(4).expandX().align(Align.right).padTop(5).row();
+		node_chooser.add(selectFront).colspan(4).expandX().align(Align.right).padTop(5);
 
 		node_chooser.getTitleTable().getCells().get(1).getActor().addListener(new ClickListener() {
 			@Override
@@ -519,35 +550,6 @@ public class BTreeEditor extends ApplicationAdapter {
 
 		loadProject(proj);
 		setProjectLabel();
-
-//		FileHandle composites = Gdx.files.local("composite_nodes.txt");
-//		FileHandle supplements = Gdx.files.local("supplement_nodes.txt");
-//		FileHandle leafs = Gdx.files.local("leaf_nodes.txt");
-
-//		if (!composites.exists()) {
-//			composites.writeString(DEFAULT_COMPOSITES, false);
-//		}
-//		if (!supplements.exists()) {
-//			supplements.writeString(DEFAULT_SUPPLEMENT, false);
-//		}
-//		if (!leafs.exists()) {
-//			leafs.writeString("TestBehaviour", false);
-//		}
-
-//		String all_comps[] = composites.readString().split("\n");
-//		for (int i = 0; i < all_comps.length; i++) {
-//			Composites.add(all_comps[i].trim());
-//		}
-//
-//		String all_supp[] = supplements.readString().split("\n");
-//		for (int i = 0; i < all_supp.length; i++) {
-//			Supplements.add(all_supp[i].trim());
-//		}
-//
-//		String all_leafs[] = leafs.readString().split("\n");
-//		for (int i = 0; i < all_leafs.length; i++) {
-//			Leafs.add(all_leafs[i].trim());
-//		}
 
 		setCorrectNodes();
 
@@ -642,6 +644,7 @@ public class BTreeEditor extends ApplicationAdapter {
 			prefs.putString(NODES_FILE, nodesFilePath);
 			prefs.putString(LAST_SAVE_PATH, f.path());
 			prefs.putString(PROJECT_PATH, f.path());
+			setCorrectNodes();
 
 			FileHandle proj = Gdx.files.absolute(project_path + "/" + PROJ_FILE);
 			if (!proj.exists()) {
@@ -910,11 +913,15 @@ public class BTreeEditor extends ApplicationAdapter {
 			createNewProject(DEFAULT_NAME, node);
 			node.updateArrows();
 			busy = false;
+			selectingNodes = false;
 		} else {
 			// show node chooser only if default not defined for new project
 			busy = true;
+			selectingNodes = true;
+
 			centerActor(node_chooser);
 			select.clearListeners();
+			selectFront.clearListeners();
 			insert.clearListeners();
 			select.addListener(new ClickListener() {
 				@Override
@@ -927,6 +934,22 @@ public class BTreeEditor extends ApplicationAdapter {
 					node.updateArrows();
 					node_chooser.fadeOut();
 					busy = false;
+					selectingNodes = false;
+				}
+			});
+
+			selectFront.addListener(new ClickListener() {
+				@Override
+				public void clicked(InputEvent event, float x, float y) {
+					String nodetype = nodetype_sel.getSelected();
+					String name = node_sel.getSelected();
+					BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()),
+							name);
+					createNewProject(DEFAULT_NAME, node);
+					node.updateArrows();
+					node_chooser.fadeOut();
+					busy = false;
+					selectingNodes = false;
 				}
 			});
 
@@ -941,6 +964,7 @@ public class BTreeEditor extends ApplicationAdapter {
 					node.updateArrows();
 					node_chooser.fadeOut();
 					busy = false;
+					selectingNodes = false;
 				}
 			});
 
@@ -968,8 +992,10 @@ public class BTreeEditor extends ApplicationAdapter {
 
 	public void createNewNode(final BehaviorNode parent) {
 		busy = true;
+		selectingNodes = true;
 		centerActor(node_chooser);
 		select.clearListeners();
+		selectFront.clearListeners();
 		insert.clearListeners();
 
 		select.addListener(new ClickListener() {
@@ -989,6 +1015,30 @@ public class BTreeEditor extends ApplicationAdapter {
 				}
 				node_chooser.fadeOut();
 				busy = false;
+				selectingNodes = false;
+				centerCamera(node);
+			}
+		});
+
+		selectFront.addListener(new ClickListener() {
+			@Override
+			public void clicked(InputEvent event, float x, float y) {
+				String nodetype = nodetype_sel.getSelected();
+				String name = node_sel.getSelected();
+				BehaviorNode node = new BehaviorNode(BTreeEditor.this, NodeType.valueOf(nodetype.toUpperCase()), name);
+				NodeTemplate template = getTemplate(name, NodeType.valueOf(nodetype.toUpperCase()));
+				if (template != null) {
+					template.properitize(node);
+					node.createProperties();
+				}
+				if (parent != null) {
+					CreateNodeCommand c = new CreateNodeCommand(BTreeEditor.this, node, parent, -1, true);
+					addAndExecuteCommand(c);
+				}
+				
+				node_chooser.fadeOut();
+				busy = false;
+				selectingNodes = false;
 				centerCamera(node);
 			}
 		});
@@ -1013,6 +1063,7 @@ public class BTreeEditor extends ApplicationAdapter {
 					}
 					node_chooser.fadeOut();
 					busy = false;
+					selectingNodes = false;
 					return;
 				}
 
@@ -1042,6 +1093,7 @@ public class BTreeEditor extends ApplicationAdapter {
 				centerCamera(node);
 				node_chooser.fadeOut();
 				busy = false;
+				selectingNodes = false;
 			}
 		});
 
@@ -1161,7 +1213,7 @@ public class BTreeEditor extends ApplicationAdapter {
 	 * undo the current command index and then walk back the command_index
 	 */
 	public void undo() {
-		if (command_index - 1 >= 0) {
+		if (command_index >= 0) {
 			ICommand c = commands.get(command_index);
 			c.undo();
 			command_index -= 1;
